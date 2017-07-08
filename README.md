@@ -15,7 +15,8 @@ Once the dependencies are installed, the script that generates the payouts need 
         - startBlockHeight: the block from which you want to start distribution for
         - endBlock: the block until you want to distribute the earnings
         - distributableMRTPerBlock: amount of MRT distributed per forged block
-        - filename: file to which the payments for the mass payment tool are written
+        - filename: filename to which the payments for the mass payment tool are written (.json is added automatically)
+        - paymentid: id used for administration of the payout.
         - node: address of your node in the form http://<ip>:<port
         - percentageOfFeesToDistribute: the percentage of Waves fees that you want to distribute
  */
@@ -24,7 +25,8 @@ var config = {
     startBlockHeight: 462000,
     endBlock: 465000,
     distributableMrtPerBlock: 20,
-    filename: 'test.json',
+    filename: 'test',
+    paymentid: 1
     node: 'http://<ip>:6869',
     percentageOfFeesToDistribute: 100
 }
