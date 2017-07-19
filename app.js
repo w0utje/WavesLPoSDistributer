@@ -127,7 +127,12 @@ var prepareDataStructure = function(blocks) {
             }
             // considering Waves fees
             if (!transaction.feeAsset || transaction.feeAsset === '' || transaction.feeAsset === null) {
-                wavesFees += transaction.fee;
+            	if(transaction.fee < 200000000) // if tx waves fee is more dan 2 waves, filter it. probably a mistake by someone
+            	{
+                	wavesFees += transaction.fee;
+                } else {
+			console.log("Filter TX at block: " + block.height + " Amount: " +  transaction.fee)
+		}
             } else {
 						// assetfee dynamic	testing
 						  assetFees = InsertOrUpdateArray(assetFees,transaction.feeAsset,transaction.fee);  //test for combined assetsfees array
