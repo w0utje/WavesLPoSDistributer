@@ -137,7 +137,7 @@ This example will generate the paymentfile airdrop_leasers.json for sending 1 Be
 
 Afterwards, the script could be started with:
 ```sh
-node airdrop.js
+node airdrop_leasers.js
 ```
 
 ## Disclaimer
