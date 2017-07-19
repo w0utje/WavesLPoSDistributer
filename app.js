@@ -28,7 +28,7 @@ var fs = require('fs');
  *     - percentageOfFeesToDistribute: the percentage of Waves fees that you want to distribute
  */
 var config = {
-   	address: '',
+    address: '',
     startBlockHeight: 559474,
     endBlock: 567751,
     distributableMrtPerBlock: 30,
@@ -68,7 +68,7 @@ var assetfees = [];
 var allfees = [assetfees];
 var BlockCount = 0;
 
-
+var LastBlock = {};
 
 var myForgedBlocks = [];
 
@@ -94,6 +94,9 @@ var start = function() {
             BlockCount++;
         }
     });
+    //Get last block
+    LastBlock = blocks.slice(-1)[0] ;
+	
     pay();
     console.log("blocks forged: " + BlockCount);
 };
@@ -410,7 +413,15 @@ var pay = function() {
         }
     });    
      
-    
+    var ActiveLeaseData = getActiveLeasesAtBlock(LastBlock);
+		
+    fs.writeFile("LastBlockLeasers.json", JSON.stringify(ActiveLeaseData), {}, function(err) {
+        if (!err) {
+            console.log('ActiveLeasers written to LastBlockLeasers.json!');
+        } else {
+            console.log(err);
+        }
+    });      
     
     
 };
