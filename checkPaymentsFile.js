@@ -8,7 +8,7 @@ var request = require('request');
  */
 var config = {
     filename: 'test.json',
-    node: 'http://188.166.161.66:6869'
+    node: 'http://5.189.136.6:6869'
 };
 
 var payments;
@@ -77,11 +77,17 @@ var addAssetInfo = function(assets, cb) {
                     assets[asset.assetId].decimals = asset.decimals;
                     assets[asset.assetId].name = asset.name;
 
-                    if (assetsFound - 1 === counter) {
+                    if (assetsFound === counter) {
                         cb();
                     }
                 }
             });
+        } else {
+            counter++;
+
+            if (assetsFound === counter) {
+                cb();
+            }
         }
     }
 };
