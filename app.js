@@ -281,7 +281,7 @@ var pay = function() {
 "  <h3>Fee's between blocks " + config.startBlockHeight + " - " + config.endBlock + ", Payout #" + config.paymentid + "</h3>" +
 "  <h4>(LPOS address: " + config.address + ")</h4>" +
 "  <h5>29-06-2017: Hi all, again a short update of the fee's earned by the bearwaves node. Automated distribution, riding on BearWaves $BEAR. Cheers!</h5> " +
-"  <h5>You can always contact us by <a href=\"mailto:bearwaves@outlook.com\">E-mail</a> or in Waves Slack @w0utje <img src=\"profile.jpg\" style=\"width:50px;height:50px;\"></h5>" +
+"  <h5>You can always contact us by <a href=\"mailto:bearwaves@outlook.com\">E-mail</a> or in Waves Slack @w0utje <img src=\"https://www.bearwaves.nl/wp-content/uploads/2017/08/banksy.jpg\" style=\"width:50px;height:50px;\"></h5>" +
 "  <h5>Blocks forged: " + BlockCount + "</h5>" + 
 "  <table class=\"table table-striped table-hover\">" +
 "    <thead> " +
@@ -300,7 +300,7 @@ var pay = function() {
         var payment = (payments[address] / Math.pow(10, 8));
         console.log(address + ' will receive ' + parseFloat(payment).toFixed(8) + ' and ' + parseFloat(mrt[address]).toFixed(2) + ' MRT and ' + parseFloat(merfees[address]).toFixed(8) + ' Mercury!');
         //send Waves fee
-        if (payment > 0) {
+        if (Number(Math.round(payments[address])) > 0) {
             transactions.push({
                 "amount": Number(Math.round(payments[address])),
                	"fee": 1, //bearwaves 0.01
@@ -311,7 +311,7 @@ var pay = function() {
             });
         }
         //send MRT
-        if (mrt[address] > 0) {
+        if (Number(Math.round(mrt[address] * Math.pow(10, 2))) > 0) {
             transactions.push({
                 "amount": Number(Math.round(mrt[address] * Math.pow(10, 2))),
                	"fee": 1, //bearwaves 0.01
@@ -323,7 +323,7 @@ var pay = function() {
             });
         }
         //send mercury fee
-        if (merfees[address] > 0) {
+        if (Number(Math.round(merfees[address])) > 0) {
             transactions.push({
                 "amount": Number(Math.round(merfees[address])),
                	"fee": 1, //bearwaves 0.01
