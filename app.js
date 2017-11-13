@@ -226,12 +226,12 @@ var distribute = function(activeLeases, amountTotalLeased, block) {
         var assetamounts = [];
         for(var i in assetFees)
         {
-					assetamounts[i]=assetFees[i] * share;
-				}
+		assetamounts[i]=assetFees[i] * share;
+	}
         
         var amountMRT = share * config.distributableMrtPerBlock;
 
-        if (payments[address]) {
+        if (address in payments) {
             payments[address] += amount * (config.percentageOfFeesToDistribute / 100);
             mrt[address] += amountMRT;
             merfees[address] +=  meramount * (config.percentageOfFeesToDistribute / 100);
