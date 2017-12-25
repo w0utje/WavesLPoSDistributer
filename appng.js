@@ -56,6 +56,20 @@ if (fs.existsSync(prevleaseinfofile))
 	currentStartBlock = config.startBlockHeight;
 }
 
+//do some cleaning
+var cleancount = 0;
+for(var cancelindex in myCanceledLeases)
+{
+    if(myCanceledLeases[cancelindex].leaseId in myLeases)
+    {
+        //remove from both arrays, we don't need them anymore
+        delete myLeases[cancelindex];
+        delete myCanceledLeases[cancelindex];
+        cleancount++;
+    }
+
+}  
+console.log("done cleaning, removed: " + cleancount);
 
 var payments = [];
 var mrt = [];
