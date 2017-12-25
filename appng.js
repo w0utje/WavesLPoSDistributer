@@ -9,6 +9,10 @@ var fs = require('fs');
  * added feeAssetId to the payments for sending payments with a custom assetFee
  * Removed 0.003 Waves Fee substraction, because of the custom assetFee adding
  * if you don't want to use an assetFee, remember that you'll need to substract the waves fee for each transaction.   
+ * Asset fee's that aren't dividable (since there aren't any decimals left) 
+ * could cause strange asset fee splitting (no 60-40). 
+ * mercury and ripto bux both have 8 decimals and are sent with 1 decimal, so there's plenty of space to divide those assets.
+ * keep this in mind when adding your own asset fee's
  * 
  *    
  * Put your settings here:
