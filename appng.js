@@ -123,6 +123,7 @@ var prepareDataStructure = function(blocks) {
 
     blocks.forEach(function(block,index) {
     var checkprevblock = false;
+	var myblock = false;
         var wavesFees = 0;
         var merFees = 0;
         var rbxFees = 0;
@@ -131,7 +132,8 @@ var prepareDataStructure = function(blocks) {
         {
             myForgedBlocks.push(block);
             checkprevblock = true;
-
+			myblock = true;
+		}
 
         block.transactions.forEach(function(transaction) {
             // type 8 are leasing tx
@@ -143,6 +145,8 @@ var prepareDataStructure = function(blocks) {
                 myCanceledLeases[transaction.leaseId] = transaction;
             } 
 
+			if(myblock)
+			{
             // considering Waves fees
             if (!transaction.feeAsset || transaction.feeAsset === '' || transaction.feeAsset === null) {
             	if(transaction.fee < 200000000) // if tx waves fee is more dan 2 waves, filter it. probably a mistake by someone
@@ -160,7 +164,7 @@ var prepareDataStructure = function(blocks) {
             if (transaction.feeAsset === 'AnERqFRffNVrCbviXbDEdzrU6ipXCP5Y1PKpFdRnyQAy') {     //Ripto Bux
                 rbxFees += (transaction.fee*0.4);
             }     
-
+			}
         });
         
       if(checkprevblock)  
@@ -194,7 +198,7 @@ var prepareDataStructure = function(blocks) {
         block.merFees = merFees;
         block.rbxFees = rbxFees;
         
-        }
+        
     });
 };
 
