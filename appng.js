@@ -135,7 +135,8 @@ var prepareDataStructure = function(blocks) {
 			myblock = true;
 		}
 
-        block.transactions.forEach(function(transaction) {
+        block.transactions.forEach(function(transaction) 
+        {
             // type 8 are leasing tx
             if (transaction.type === 8 && transaction.recipient === config.address) {
                 transaction.block = block.height;
@@ -147,43 +148,45 @@ var prepareDataStructure = function(blocks) {
 
 			if(myblock)
 			{
-            // considering Waves fees
-            if (!transaction.feeAsset || transaction.feeAsset === '' || transaction.feeAsset === null) {
-            	if(transaction.fee < 200000000) // if tx waves fee is more dan 2 waves, filter it. probably a mistake by someone
-            	{
-                	wavesFees += (transaction.fee*0.4);
-                } else {
-		  	           console.log("Filter TX at block: " + block.height + " Amount: " +  transaction.fee)
-		            }   
-            } 
+                // considering Waves fees
+                if (!transaction.feeAsset || transaction.feeAsset === '' || transaction.feeAsset === null) 
+                {
+                    if(transaction.fee < 200000000) // if tx waves fee is more dan 2 waves, filter it. probably a mistake by someone
+                    {
+                        wavesFees += (transaction.fee*0.4);
+                    } else {
+                        console.log("Filter TX at block: " + block.height + " Amount: " +  transaction.fee)
+                    }   
+                } 
             
 
-            if (transaction.feeAsset === 'HzfaJp8YQWLvQG4FkUxq2Q7iYWMYQ2k8UF89vVJAjWPj') {     //Mercury
-                merFees += (transaction.fee*0.4);
-            }       
-            if (transaction.feeAsset === 'AnERqFRffNVrCbviXbDEdzrU6ipXCP5Y1PKpFdRnyQAy') {     //Ripto Bux
-                rbxFees += (transaction.fee*0.4);
-            }     
+                if (transaction.feeAsset === 'HzfaJp8YQWLvQG4FkUxq2Q7iYWMYQ2k8UF89vVJAjWPj') {     //Mercury
+                    merFees += (transaction.fee*0.4);
+                }       
+                if (transaction.feeAsset === 'AnERqFRffNVrCbviXbDEdzrU6ipXCP5Y1PKpFdRnyQAy') {     //Ripto Bux
+                    rbxFees += (transaction.fee*0.4);
+                }     
 			}
-        });
+      });
         
       if(checkprevblock)  
       {      
-        if (index > 0) {
+        if (index > 0) 
+        {
             //console.log("Next: " + blocks[index + 1]);
             var prevblock = blocks[index - 1];
-            prevblock.transactions.forEach(function(transaction) {
-                        // considering Waves fees
-              if (!transaction.feeAsset || transaction.feeAsset === '' || transaction.feeAsset === null) {
+            prevblock.transactions.forEach(function(transaction) 
+            {
+                // considering Waves fees
+                if (!transaction.feeAsset || transaction.feeAsset === '' || transaction.feeAsset === null) {
               	if(transaction.fee < 200000000) // if tx waves fee is more dan 2 waves, filter it. probably a mistake by someone
               	{
                   	wavesFees += (transaction.fee*0.6);
-                  } else {
-  			console.log("Filter TX at block: " + block.height + " Amount: " +  transaction.fee)
-  		}
-              } 
+                } else {
+  			        console.log("Filter TX at block: " + block.height + " Amount: " +  transaction.fee)
+  		        }
+            } 
               
-  
               if (transaction.feeAsset === 'HzfaJp8YQWLvQG4FkUxq2Q7iYWMYQ2k8UF89vVJAjWPj') {     //Mercury
                   merFees += (transaction.fee*0.6);
               }       
@@ -197,8 +200,7 @@ var prepareDataStructure = function(blocks) {
         block.wavesFees = wavesFees;
         block.merFees = merFees;
         block.rbxFees = rbxFees;
-        
-        
+         
     });
 };
 
@@ -231,7 +233,8 @@ var getAllBlocks = function() {
                 }
             }).getBody('utf8'));
         }
-        currentBlocks.forEach(function(block) {
+        currentBlocks.forEach(function(block) 
+        {
             if (block.height <= config.endBlock) {
                 blocks.push(block);
             }
@@ -488,20 +491,6 @@ var getActiveLeasesAtBlock = function(block) {
     });
 
     return { totalLeased: totalLeased, activeLeases: activeLeasesPerAddress };
-};
-
-
-var InsertOrUpdateArray = function(MyArray,Key,Value)
-{
-			if(Key in MyArray)
-			{
-				MyArray[Key] += Value;
-			} else
-			{
-				 MyArray[Key] = Value;
-				
-			}
-			return MyArray;                       
 };
 
 start();
