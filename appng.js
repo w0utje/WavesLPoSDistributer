@@ -23,6 +23,8 @@ var fs = require('fs');
  *     - filename: file to which the payments for the mass payment tool are written
  *     - paymentid: used to create payment and html file with this id.   
  *     - node: address of your node in the form http://<ip>:<port
+ *     - assetFeeId: AssetID used as fee for payments, empty or null for using waves
+ *     - feeAmount: fee amount counted from decimals. example: asset with 2 decimals. fee=1 => 0.01
  *     - percentageOfFeesToDistribute: the percentage of Waves fees that you want to distribute
  */
 var config = {
@@ -34,6 +36,8 @@ var config = {
     paymentid: "36",
     node: 'http://127.0.0.1:6869',
     //node: 'http://nodes.wavesnodes.com',
+    assetFeeId: "5BK9HPKmSkxoMdqvDzneb2UaW2NzDRjoMpMvQWfB4NcK",
+    feeAmount: 1,        
     percentageOfFeesToDistribute: 100
 };
  
@@ -134,6 +138,9 @@ var prepareDataStructure = function(blocks) {
             checkprevblock = true;
 			myblock = true;
 		}
+		var blockwavesfees=0;
+		var blockmerfees=0;
+		var blockrbxfees=0;
 
         block.transactions.forEach(function(transaction) 
         {
@@ -153,7 +160,9 @@ var prepareDataStructure = function(blocks) {
                 {
                     if(transaction.fee < 200000000) // if tx waves fee is more dan 2 waves, filter it. probably a mistake by someone
                     {
-                        wavesFees += (transaction.fee*0.4);
+                        //wavesFees += (transaction.fee*0.4);
+                        blockwavesfees += transaction.fee;
+                        
                     } else {
                         console.log("Filter TX at block: " + block.height + " Amount: " +  transaction.fee)
                     }   
@@ -161,13 +170,22 @@ var prepareDataStructure = function(blocks) {
             
 
                 if (transaction.feeAsset === 'HzfaJp8YQWLvQG4FkUxq2Q7iYWMYQ2k8UF89vVJAjWPj') {     //Mercury
-                    merFees += (transaction.fee*0.4);
+                    //merFees += (transaction.fee*0.4);
+                    blockmerfees += transaction.fee;
                 }       
                 if (transaction.feeAsset === 'AnERqFRffNVrCbviXbDEdzrU6ipXCP5Y1PKpFdRnyQAy') {     //Ripto Bux
-                    rbxFees += (transaction.fee*0.4);
+                    //rbxFees += (transaction.fee*0.4);
+                    blockrbxfees += transaction.fee;
                 }     
 			}
       });
+      wavesFees += Math.round(parseInt(blockwavesfees / 5) * 2);
+      merFees += Math.round(parseInt(blockmerfees / 5) * 2);
+      rbxFees += Math.round(parseInt(blockrbxfees / 5) * 2);
+
+      blockwavesfees=0;
+      blockmerfees=0;
+      blockrbxfees=0;
         
       if(checkprevblock)  
       {      
@@ -181,21 +199,29 @@ var prepareDataStructure = function(blocks) {
                 if (!transaction.feeAsset || transaction.feeAsset === '' || transaction.feeAsset === null) {
               	if(transaction.fee < 200000000) // if tx waves fee is more dan 2 waves, filter it. probably a mistake by someone
               	{
-                  	wavesFees += (transaction.fee*0.6);
+                  	//wavesFees += (transaction.fee*0.6);
+                  	blockwavesfees += transaction.fee;
                 } else {
   			        console.log("Filter TX at block: " + block.height + " Amount: " +  transaction.fee)
   		        }
             } 
               
               if (transaction.feeAsset === 'HzfaJp8YQWLvQG4FkUxq2Q7iYWMYQ2k8UF89vVJAjWPj') {     //Mercury
-                  merFees += (transaction.fee*0.6);
+                  //merFees += (transaction.fee*0.6);
+                  blockmerfees += transaction.fee;
               }       
               if (transaction.feeAsset === 'AnERqFRffNVrCbviXbDEdzrU6ipXCP5Y1PKpFdRnyQAy') {     //Ripto Bux
-                  rbxFees += (transaction.fee*0.6);
+                  //rbxFees += (transaction.fee*0.6);
+                  blockrbxfees += transaction.fee;
               } 
             });        
-        }            
-      }         
+        }    
+				
+      wavesFees += (blockwavesfees - Math.round(parseInt(blockwavesfees / 5) * 2));
+      merFees += (blockmerfees - Math.round(parseInt(blockmerfees / 5) * 2));
+      rbxFees += (blockrbxfees - Math.round(parseInt(blockrbxfees / 5) * 2));				
+				        
+      } 
 
         block.wavesFees = wavesFees;
         block.merFees = merFees;
@@ -341,8 +367,8 @@ var pay = function() {
         if (Number(Math.round(payments[address])) > 0) {
             transactions.push({
                 "amount": Number(Math.round(payments[address])),
-               	"fee": 1, //bearwaves 0.01
-                "feeAssetId": "9gnc5UCY6RxtSi9FEJkcD57r5NBgdr45DVYtunyDLrgC",  //bearwaves assetfee
+               	"fee": config.feeAmount, 
+                "feeAssetId": config.assetFeeId,  
                 "sender": config.address,
                 "attachment": "DVCsMf2Av2pvvM8GNzzP1tQKZtd4jWfcHJQj9bky32RR6janfLK2",
                 "recipient": address
@@ -352,8 +378,8 @@ var pay = function() {
         if (Number(Math.round(mrt[address] * Math.pow(10, 2))) > 0) {
             transactions.push({
                 "amount": Number(Math.round(mrt[address] * Math.pow(10, 2))),
-               	"fee": 1, //bearwaves 0.01
-                "feeAssetId": "9gnc5UCY6RxtSi9FEJkcD57r5NBgdr45DVYtunyDLrgC", //bearwaves assetfee
+               	"fee": config.feeAmount, 
+                "feeAssetId": config.assetFeeId, 
                 "assetId": "4uK8i4ThRGbehENwa6MxyLtxAjAo1Rj9fduborGExarC",
                 "sender": config.address,
                 "attachment": "DVCsMf2Av2pvvM8GNzzP1tQKZtd4jWfcHJQj9bky32RR6janfLK2",
@@ -364,8 +390,8 @@ var pay = function() {
         if (Number(Math.round(merfees[address])) > 0) {
             transactions.push({
                 "amount": Number(Math.round(merfees[address])),
-               	"fee": 1, //bearwaves 0.01
-                "feeAssetId": "9gnc5UCY6RxtSi9FEJkcD57r5NBgdr45DVYtunyDLrgC", //bearwaves assetfee
+               	"fee": config.feeAmount, 
+                "feeAssetId": config.assetFeeId,
                 "assetId": "HzfaJp8YQWLvQG4FkUxq2Q7iYWMYQ2k8UF89vVJAjWPj",
                 "sender": config.address,
                 "attachment": "DVCsMf2Av2pvvM8GNzzP1tQKZtd4jWfcHJQj9bky32RR6janfLK2",
@@ -375,8 +401,8 @@ var pay = function() {
         //this will send one BearWaves token to every leaser
             transactions.push({
                 "amount": 100,
-               	"fee": 1, //bearwaves 0.01
-                "feeAssetId": "9gnc5UCY6RxtSi9FEJkcD57r5NBgdr45DVYtunyDLrgC", //bearwaves assetfee
+               	"fee": config.feeAmount, 
+                "feeAssetId": config.assetFeeId, 
                 "assetId": "9gnc5UCY6RxtSi9FEJkcD57r5NBgdr45DVYtunyDLrgC",
                 "sender": config.address,
                 "attachment": "DVCsMf2Av2pvvM8GNzzP1tQKZtd4jWfcHJQj9bky32RR6janfLK2",
