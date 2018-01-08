@@ -2,6 +2,7 @@ var request = require('sync-request');
 var fs = require('fs');
 
 /**
+ * V 2.0.2
  * w0utje's edit of Hawky's LPoSDistributor
  * added mercury and ripto bux fee calculation
  * added (cancelled) leases infomation to be re-used next payout 
@@ -25,6 +26,7 @@ var fs = require('fs');
  *     - node: address of your node in the form http://<ip>:<port
  *     - assetFeeId: AssetID used as fee for payments, empty or null for using waves
  *     - feeAmount: fee amount counted from decimals. example: asset with 2 decimals. fee=1 => 0.01
+ *     - paymentAttachment: attachment used for payments (base58 encoded)
  *     - percentageOfFeesToDistribute: the percentage of Waves fees that you want to distribute
  */
 var config = {
@@ -37,7 +39,8 @@ var config = {
     node: 'http://127.0.0.1:6869',
     //node: 'http://nodes.wavesnodes.com',
     assetFeeId: "5BK9HPKmSkxoMdqvDzneb2UaW2NzDRjoMpMvQWfB4NcK",
-    feeAmount: 1,        
+    feeAmount: 1,  
+	paymentAttachment: "DVCsMf2Av2pvvM8GNzzP1tQKZtd4jWfcHJQj9bky32RR6janfLK2", //thank you for leasing to bearwaves...
     percentageOfFeesToDistribute: 100
 };
  
@@ -370,7 +373,7 @@ var pay = function() {
                	"fee": config.feeAmount, 
                 "feeAssetId": config.assetFeeId,  
                 "sender": config.address,
-                "attachment": "DVCsMf2Av2pvvM8GNzzP1tQKZtd4jWfcHJQj9bky32RR6janfLK2",
+                "attachment": config.paymentAttachment,
                 "recipient": address
             });
         }
@@ -382,7 +385,7 @@ var pay = function() {
                 "feeAssetId": config.assetFeeId, 
                 "assetId": "4uK8i4ThRGbehENwa6MxyLtxAjAo1Rj9fduborGExarC",
                 "sender": config.address,
-                "attachment": "DVCsMf2Av2pvvM8GNzzP1tQKZtd4jWfcHJQj9bky32RR6janfLK2",
+                "attachment": config.paymentAttachment,
                 "recipient": address
             });
         }
@@ -394,7 +397,7 @@ var pay = function() {
                 "feeAssetId": config.assetFeeId,
                 "assetId": "HzfaJp8YQWLvQG4FkUxq2Q7iYWMYQ2k8UF89vVJAjWPj",
                 "sender": config.address,
-                "attachment": "DVCsMf2Av2pvvM8GNzzP1tQKZtd4jWfcHJQj9bky32RR6janfLK2",
+                "attachment": config.paymentAttachment,
                 "recipient": address
             });
         }   
@@ -405,7 +408,7 @@ var pay = function() {
                 "feeAssetId": config.assetFeeId, 
                 "assetId": "9gnc5UCY6RxtSi9FEJkcD57r5NBgdr45DVYtunyDLrgC",
                 "sender": config.address,
-                "attachment": "DVCsMf2Av2pvvM8GNzzP1tQKZtd4jWfcHJQj9bky32RR6janfLK2",
+                "attachment": config.paymentAttachment,
                 "recipient": address
             });           
         
