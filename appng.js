@@ -30,17 +30,17 @@ var fs = require('fs');
  *     - percentageOfFeesToDistribute: the percentage of Waves fees that you want to distribute
  */
 var config = {
-    address: '3PEFQiFMLm1gTVjPdfCErG8mTHRcH2ATaWa',
-    startBlockHeight: 805000,
-    endBlock: 808660,
+    address: '3PPPTqGUYHJUYqKkRCV3kAS44guun9iN7J8',
+    startBlockHeight: 1146311,
+    endBlock: 1150099,
     distributableMrtPerBlock: 0,  //MRT distribution stopped
     filename: 'payment', //.json added automatically
-    paymentid: "36",
+    paymentid: "1",
     node: 'http://127.0.0.1:6869',
     //node: 'http://nodes.wavesnodes.com',
     //assetFeeId: "5BK9HPKmSkxoMdqvDzneb2UaW2NzDRjoMpMvQWfB4NcK",
     feeAmount: 1,  
-    paymentAttachment: "DVCsMf2Av2pvvM8GNzzP1tQKZtd4jWfcHJQj9bky32RR6janfLK2", //thank you for leasing to bearwaves...
+    paymentAttachment: "mXtED5Hg4Lv6QMzeVeWA1NyQMWQj29GtxYstSRXEaujKnxRLVTArhfz77FdkkwV8kBHY6UgJnF2K57i", // thx 4 leasing 2 cryptin.
     percentageOfFeesToDistribute: 100
 };
  
@@ -48,7 +48,7 @@ var config = {
 var myLeases = {};
 var myCanceledLeases = {};
 
-var currentStartBlock = 462000;
+var currentStartBlock = 1146000;
 
 
 var fs=require('fs');
@@ -305,7 +305,7 @@ var pay = function() {
 "  <h3>Fee's between blocks " + config.startBlockHeight + " - " + config.endBlock + ", Payout #" + config.paymentid + "</h3>" +
 "  <h4>(LPOS address: " + config.address + ")</h4>" +
 "  <h5>Hi all, a short update of the fee's earned by the Cryptin node. Automated distribution. Cheers!</h5> " +
-"  <h5>You can always contact us by <a href=\"mailto:info@cryptin.eu\">E-mail</a> or check out website <a href=\"http://cryptin.eu\"> <img src=\"https://waves.cryptin.eu/\" style=\"width:340px;height:68px;\"></h5>" +
+"  <h5>You can always contact us by <a href=\"mailto:info@cryptin.eu\">E-mail</a> or check out website <a href=\"http://cryptin.eu\"></a> <img src=\"https://waves.cryptin.eu/\" style=\"width:340px;height:68px;\"></h5>" +
 "  <h5>Blocks forged: " + BlockCount + "</h5>" + 
 "  <table class=\"table table-striped table-hover\">" +
 "    <thead> " +
