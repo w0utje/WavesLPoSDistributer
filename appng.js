@@ -378,7 +378,7 @@ var pay = function() {
 "</body>" +
 "</html>";
     
-    console.log("total fees: " + (totalfees/100000000) + " total MRT: " + totalMRT + " );
+    console.log("total fees: " + (totalfees/100000000) + " total MRT: " + totalMRT + "  + " total Up: " + (totalrbxfees/100000000) );
     var paymentfile = config.filename + config.paymentid + ".json";
     var htmlfile = config.filename + config.paymentid + ".html";
     
