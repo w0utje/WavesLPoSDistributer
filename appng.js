@@ -38,7 +38,7 @@ var config = {
     paymentid: "36",
     node: 'http://127.0.0.1:6869',
     //node: 'http://nodes.wavesnodes.com',
-    assetFeeId: "5BK9HPKmSkxoMdqvDzneb2UaW2NzDRjoMpMvQWfB4NcK",
+    //assetFeeId: "5BK9HPKmSkxoMdqvDzneb2UaW2NzDRjoMpMvQWfB4NcK",
     feeAmount: 1,  
     paymentAttachment: "DVCsMf2Av2pvvM8GNzzP1tQKZtd4jWfcHJQj9bky32RR6janfLK2", //thank you for leasing to bearwaves...
     percentageOfFeesToDistribute: 100
@@ -80,8 +80,6 @@ console.log("done cleaning, removed: " + cleancount);
 
 var payments = [];
 var mrt = [];
-var merfees=[];
-var rbxfees=[];
 
 
 var BlockCount = 0;
@@ -132,8 +130,6 @@ var prepareDataStructure = function(blocks) {
     var checkprevblock = false;
 	var myblock = false;
         var wavesFees = 0;
-        var merFees = 0;
-        var rbxFees = 0;
 
         if (block.generator === config.address) 
         {
@@ -142,8 +138,6 @@ var prepareDataStructure = function(blocks) {
 			myblock = true;
 		}
 		var blockwavesfees=0;
-		var blockmerfees=0;
-		var blockrbxfees=0;
 
         block.transactions.forEach(function(transaction) 
         {
@@ -169,27 +163,13 @@ var prepareDataStructure = function(blocks) {
                     } else {
                         console.log("Filter TX at block: " + block.height + " Amount: " +  transaction.fee)
                     }   
-                } 
-            
-
-                if (transaction.feeAsset === 'HzfaJp8YQWLvQG4FkUxq2Q7iYWMYQ2k8UF89vVJAjWPj') {     //Mercury
-                    //merFees += (transaction.fee*0.4);
-                    blockmerfees += transaction.fee;
-                }       
-                if (transaction.feeAsset === 'AnERqFRffNVrCbviXbDEdzrU6ipXCP5Y1PKpFdRnyQAy') {     //Ripto Bux
-                    //rbxFees += (transaction.fee*0.4);
-                    blockrbxfees += transaction.fee;
-                }     
+                }  
 			}
       });
       wavesFees += Math.round(parseInt(blockwavesfees / 5) * 2);
-      merFees += Math.round(parseInt(blockmerfees / 5) * 2);
-      rbxFees += Math.round(parseInt(blockrbxfees / 5) * 2);
 
       blockwavesfees=0;
-      blockmerfees=0;
-      blockrbxfees=0;
-        
+       
       if(checkprevblock)  
       {      
         if (index > 0) 
@@ -209,27 +189,15 @@ var prepareDataStructure = function(blocks) {
   		        }
             } 
               
-              if (transaction.feeAsset === 'HzfaJp8YQWLvQG4FkUxq2Q7iYWMYQ2k8UF89vVJAjWPj') {     //Mercury
-                  //merFees += (transaction.fee*0.6);
-                  blockmerfees += transaction.fee;
-              }       
-              if (transaction.feeAsset === 'AnERqFRffNVrCbviXbDEdzrU6ipXCP5Y1PKpFdRnyQAy') {     //Ripto Bux
-                  //rbxFees += (transaction.fee*0.6);
-                  blockrbxfees += transaction.fee;
-              } 
             });        
         }    
 				
       wavesFees += (blockwavesfees - Math.round(parseInt(blockwavesfees / 5) * 2));
-      merFees += (blockmerfees - Math.round(parseInt(blockmerfees / 5) * 2));
-      rbxFees += (blockrbxfees - Math.round(parseInt(blockrbxfees / 5) * 2));				
 				        
       } 
 
         block.wavesFees = wavesFees;
-        block.merFees = merFees;
-        block.rbxFees = rbxFees;
-         
+  
     });
 };
 
@@ -289,14 +257,10 @@ var getAllBlocks = function() {
  */
 var distribute = function(activeLeases, amountTotalLeased, block) {
     var fee = block.wavesFees;
-    var merfee = block.merFees;
-    var rbxfee = block.rbxFees;
 
     for (var address in activeLeases) {
         var share = (activeLeases[address] / amountTotalLeased)
         var amount = fee * share;
-        var meramount = merfee * share;
-        var rbxamount = rbxfee * share;
         
         var assetamounts = [];
 
@@ -306,18 +270,13 @@ var distribute = function(activeLeases, amountTotalLeased, block) {
         if (address in payments) {
             payments[address] += amount * (config.percentageOfFeesToDistribute / 100);
             mrt[address] += amountMRT;
-            merfees[address] +=  meramount * (config.percentageOfFeesToDistribute / 100);
-            rbxfees[address] +=  rbxamount * (config.percentageOfFeesToDistribute / 100);
-            
-            
+                     
         } else {
             payments[address] = amount * (config.percentageOfFeesToDistribute / 100);
             mrt[address] = amountMRT;
-            merfees[address] =  meramount * (config.percentageOfFeesToDistribute / 100);
-            rbxfees[address] =  rbxamount * (config.percentageOfFeesToDistribute / 100);
         }
 
-        console.log(address + ' will receive ' + amount + ' of(' + fee + ') and Mer amount: ' + meramount + ' (' + merfee + ') and ' + amountMRT + ' MRT for block: ' + block.height + ' share: ' + share);
+        console.log(address + ' will receive ' + amount + ' of(' + fee + ') and ' + amountMRT + ' MRT for block: ' + block.height + ' share: ' + share);
     }
 };
 
@@ -329,8 +288,6 @@ var pay = function() {
     var transactions = [];
     var totalMRT = 0;
     var totalfees =0;
-    var totalmerfees=0;
-    var totalrbxfees=0;
     
     var html = "";
     
@@ -347,25 +304,22 @@ var pay = function() {
 "<div class=\"container\">" +
 "  <h3>Fee's between blocks " + config.startBlockHeight + " - " + config.endBlock + ", Payout #" + config.paymentid + "</h3>" +
 "  <h4>(LPOS address: " + config.address + ")</h4>" +
-"  <h5>29-06-2017: Hi all, again a short update of the fee's earned by the bearwaves node. Automated distribution, riding on BearWaves $BEAR. Cheers!</h5> " +
-"  <h5>You can always contact us by <a href=\"mailto:bearwaves@outlook.com\">E-mail</a> or in Waves Slack @w0utje <img src=\"https://www.bearwaves.nl/wp-content/uploads/2017/08/banksy.jpg\" style=\"width:50px;height:50px;\"></h5>" +
+"  <h5>Hi all, a short update of the fee's earned by the Cryptin node. Automated distribution. Cheers!</h5> " +
+"  <h5>You can always contact us by <a href=\"mailto:info@cryptin.eu\">E-mail</a> or check out website <a href=\"http://cryptin.eu\"> <img src=\"https://waves.cryptin.eu/\" style=\"width:340px;height:68px;\"></h5>" +
 "  <h5>Blocks forged: " + BlockCount + "</h5>" + 
 "  <table class=\"table table-striped table-hover\">" +
 "    <thead> " +
 "      <tr>" +
 "        <th>Address</th>" +
 "        <th>Waves</th>" +
-"        <th>MRT</th>" +
-"        <th>Mercury</th>" +
-"        <th>Ripto Bux</th>" +        
-        
+"        <th>MRT</th>" + 
 "      </tr>" +
 "    </thead>" +
 "    <tbody>";
     
     for (var address in payments) {
         var payment = (payments[address] / Math.pow(10, 8));
-        console.log(address + ' will receive ' + parseFloat(payment).toFixed(8) + ' and ' + parseFloat(mrt[address]).toFixed(2) + ' MRT and ' + parseFloat(merfees[address]).toFixed(8) + ' Mercury!');
+        console.log(address + ' will receive ' + parseFloat(payment).toFixed(8) + ' and ' + parseFloat(mrt[address]).toFixed(2) + ' MRT ');
         //send Waves fee
         if (Number(Math.round(payments[address])) > 0) {
             transactions.push({
@@ -389,50 +343,32 @@ var pay = function() {
                 "recipient": address
             });
         }
-        //send mercury fee
-        if (Number(Math.round(merfees[address])) > 0) {
-            transactions.push({
-                "amount": Number(Math.round(merfees[address])),
-               	"fee": config.feeAmount, 
-                "feeAssetId": config.assetFeeId,
-                "assetId": "HzfaJp8YQWLvQG4FkUxq2Q7iYWMYQ2k8UF89vVJAjWPj",
-                "sender": config.address,
-                "attachment": config.paymentAttachment,
-                "recipient": address
-            });
-        }   
+
         //this will send one BearWaves token to every leaser
-            transactions.push({
-                "amount": 100,
-               	"fee": config.feeAmount, 
-                "feeAssetId": config.assetFeeId, 
-                "assetId": "9gnc5UCY6RxtSi9FEJkcD57r5NBgdr45DVYtunyDLrgC",
-                "sender": config.address,
-                "attachment": config.paymentAttachment,
-                "recipient": address
-            });           
+//            transactions.push({
+  //              "amount": 100,
+    //           	"fee": config.feeAmount, 
+   //             "feeAssetId": config.assetFeeId, 
+   //             "assetId": "9gnc5UCY6RxtSi9FEJkcD57r5NBgdr45DVYtunyDLrgC",
+  //              "sender": config.address,
+   //             "attachment": config.paymentAttachment,
+   //             "recipient": address
+ //           });           
         
         totalMRT += mrt[address];
         totalfees += payments[address];
-        totalmerfees += merfees[address];
-        totalrbxfees += rbxfees[address];
-        
 
         
         //html += "<tr><td>" + address + "</td><td>" + ((payments[address]/100000000).toPrecision(8) - 0.002) + "</td><td>" + (merfees[address]/100000000).toPrecision(8) + "</td><td>" + mrt[address].toPrecision(8) + "</td><td>" + (upfees[address]/100000000) + "</td></tr>\r\n";
         html += "<tr><td>" + address + "</td><td>" + 							 	//address column
 				((payments[address]/100000000).toFixed(8)) + "</td><td>" + 	//Waves fee's
 				mrt[address].toFixed(2) + "</td><td>" +                     //MRT
-				(merfees[address]/100000000).toFixed(8) + "</td><td>" +		//Mercury fee's
-				(rbxfees[address]/100000000).toFixed(8) + "</td></tr>" +		//Ripto Bux fee's 
 				
 				"\r\n";
     }
     
     html += "<tr><td><b>Total</b></td><td><b>" + ((totalfees/100000000).toFixed(8)) +
 		 "</b></td><td><b>" + totalMRT.toFixed(2) + "</b></td><td><b>" +
-		  (totalmerfees/100000000).toFixed(8) + "</b></td><td><b>" +
-		  (totalrbxfees/100000000).toFixed(8) + "</b></td></tr>" +		  
 			"\r\n";
     
     html += "</tbody>" +
@@ -442,7 +378,7 @@ var pay = function() {
 "</body>" +
 "</html>";
     
-    console.log("total fees: " + (totalfees/100000000) + " total MRT: " + totalMRT + " total Mer: " + (totalmerfees/100000000) + " total Up: " + (totalrbxfees/100000000) );
+    console.log("total fees: " + (totalfees/100000000) + " total MRT: " + totalMRT + " );
     var paymentfile = config.filename + config.paymentid + ".json";
     var htmlfile = config.filename + config.paymentid + ".html";
     
