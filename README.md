@@ -7,35 +7,68 @@ First of all, you need to install Node.js (https://nodejs.org/en/) and NPM. Afte
 mkdir node_modules
 npm install
 ```
-Once the dependencies are installed, the script that generates the payouts need to be configured. In order to do so, change the settings of the configuration section:
+Once the dependencies are installed, the script that generates the payouts need to be configured. In order to do so, change the settings of the top section:
 ```sh
-/*
-    Put your settings here:
-        - address: the address of your node that you want to distribute from
-        - startBlockHeight: the block from which you want to start distribution for
-        - endBlock: the block until you want to distribute the earnings
-        - distributableMRTPerBlock: amount of MRT distributed per forged block
-        - filename: filename to which the payments for the mass payment tool are written (.json is added automatically)
-        - paymentid: id used for administration of the payout.
-        - node: address of your node in the form http://<ip>:<port
-        - percentageOfFeesToDistribute: the percentage of Waves fees that you want to distribute
- */
+// Start my values
+const myleasewallet = '<put your waves wallet address>';  //Your wallet address where all leases point
+const myquerynode = "http://localhost:6869";  //Put reachability address of API access of the node you want to use for querying the waves blockchain. Defaults localnode
+const feedistributionpercentage = 90;  //How many percentage of revenues to distribute. Defaults 90% 
+const blockwindowsize = 50000;  //How many blocks are scanned in one batch for payments
+
+// Put here wallet addresses that will receive no fees
+// Could be wallets that award you with leases like the waves small node program
+// var nofeearray = [ "3P6CwqcnK1wyW5TLzD15n79KbAsqAjQWXYZ",    //index0
+//                    "3P9AodxBATXqFC3jtUydXv9YJ8ExAD2WXYZ" ];
+var nofeearray = [ ];
+// End my values
+
+NOTE about distributionpercentage;
+The default distribution of 'Mrt token' is put on 00. If you want to distribute Mrt to leasers, change value appropriate for number of tokens to divide;
+
 var config = {
-    address: '',
-    startBlockHeight: 462000,
-    endBlock: 465000,
-    distributableMrtPerBlock: 20,
-    filename: 'test',
-    paymentid: 1
-    node: 'http://<ip>:6869',
-    percentageOfFeesToDistribute: 100
+    distributableMrtPerBlock: 00,  //MRT distribution stopped
+};
+
+Then change 1 time the initial values to your needs in file 'batchinfo.json'. Default content is;
+{
+    "batchdata": {
+        "attachment": "USkz6M7kM8X2vR89LHm48WnUK3YdBWV55W4RJ92y8jbV1XviPSzbTCdXWxtx",  <== Base58 encoded attachment message ("Thanks for leasing to plukkieforger :-)") 
+        "paymentid": "1",             <== Can leave default. Used in the filenames that are created by the collectorscript
+        "paystartblock": "1040000",   <== From which block should we start to consider payments
+        "paystopblock": "1100000",    <== From which block should we stop scanning
+        "scanstartblock": "1040000"   <== Where to start scanning. This is your first block with the first incoming lease to your wallet
+    }
 }
+
+After the script succesfully finishes, 'the batchinfo.json' file is updated automatically for the next run. So it's a one time editing by hand for this file :-)
+ 
 ```
 After a successful configuration of the tool, it could be started with:
 ```sh
-node app.js
+node appng.js OR start_collector.sh
+
+NOTE1
+The script can consume a serious amount of memory and exists with errors during it's run.
+Therefore I've put 'start_collector.sh' script as starter which runs 'node appng.js' with some memory optimized settings. 
+For me it works with tweaks to 65KB of stack memory and 8GB of available RAM. So use 'start_collector.sh' if you run into problems.
+
+NOTE2
+To run the collector tool every night @1 AM, edit /etc/crontab and put (where the tool WavesLPoSDistributer is located in /home/myuser/...):
+00 01 * * * root cd /home/myuser/WavesLPoSDistributer/ && ./start_collector.sh
+
 ```
-After the script is finished, the payments that should be distributed to the leasers are written to the file configured by the _config.filename_ setting in the configuration section.
+After the tool ran, it finishes up by writing the actual payments to be done into the file which is configured in the script by:
+
+var config = {
+	filename: 'wavesleaserpayouts',
+
+The name is constructed together with the paymentid of every  batch session. So, for the first run, the following Three files will be created;
+- wavesleaserpayouts1.json
+- wavesleaserpayouts1.html
+- wavesleaserpayouts1.log
+
+For the next session, the paymentid is incremented by 1
+ 
 ## Doing the payments
 For the actual payout, the masspayment tool needs to be run. Before it could be started, it also needs to be configured:
 ```sh
@@ -54,6 +87,11 @@ var config = {
 After configuration, the script could be started with:
 ```sh
 node massPayment.js
+
+After the payments have finished succesfully, you can move the three respective payoutfiles (i.e. wavesleaserpayouts1.json, wavesleaserpayouts1.json and wavesleaserpayouts1.log
+to the dir 'paymentsDone' and keep them as reference. This also avoids accidental duplicate payments if you would run the masspayment tool again without changing the filename.
+
+Next release I will change this behaviour by integrating some automaton here :-)
 ```
 ## Why two seperate tools?
 We decided to use two seperate tools since this allows for additional tests of the payments before the payments are actually executed. On the other hand, it does not provide any drawback since both scripts could also be called directly one after the other with:
