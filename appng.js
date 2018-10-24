@@ -1,56 +1,111 @@
+/* =================================================================================================================
+ * V 1.0
+ * Plukkie's edit of W0utjes's LPoSDistributor V 2.0.3
+ *
+ * Donations are welcome to my waves alias 'plukkieforger'
+ * 
+ * CHANGES
+ * - Created seperate batchinfo.json for initial key/value pairs, which are updated after a successfull run
+ *   After each succesfull run the following XXXXX values are updated;
+ *       "paymentid": "XXXX",
+ *       "paystartblock": "XXXXX",
+ *       "paystopblock": "XXXX",
+ *   The difference between paystart/paystop block will be the blockwindowsize setting
+ *
+ * - Possibility to set blockwindowsize = X, where X defines how many blocks will be scanned for payments
+ *
+ * - Possibility to set wallet addresses in the variable 'nofeearray [ ];' which will NOT get revenue sharing.
+ *   This can be used if you are rewarded with leases, which do not expect payout from you
+ *   Default it's empty, so all incoming leasers get revenue sharing
+ *
+ * - Added paymentid which complements the '<leaserpayoutfilename> + <paymentid>' to make the payoutfiles unique to every session.
+ *   All files are stored now and actual payouts with masspayment script can be done for every unique payout files
+ *
+ * - Added logfile creation after a succesfull session which summarizes relevant info, which can be used for reference or analysis
+ *   This is the '<leaserpayoutfilename>.log'
+ *
+ * - Added bash script 'start_collector.sh' which optimizes some runtime variables of 'node' binary
+ *   This can be used if regular execution of the appng.js script gives problems and terminates with errors
+ * ================================================================================================================= */
+
+
+// START - Put your settings here
+const myleasewallet = 'Your waves leasewallet address here';
+const myquerynode = "http://localhost:6869";
+const feedistributionpercentage = 90;
+const blockwindowsize = 50000; //how many blockss to proces for every paymentcycle
+
+// Put here wallet addresses that will receive no fees
+// Could be wallets that award you with leases like the waves small node program
+// var nofeearray = [ "3P6CwqcnK1wyW5TLzD15n79KbAsqAjQWXYZ",       //index0
+//                    "3P9AodxBATXqFC3jtUydXv9YJ8ExAD2WXYZ" ];
+var nofeearray = [ ];
+// END - your settings
+
 var request = require('sync-request');
 var fs = require('fs');
 
-/**
- * V 2.0.3
- * w0utje's edit of Hawky's LPoSDistributor
- * added mercury and ripto bux fee calculation
- * added (cancelled) leases infomation to be re-used next payout
- * added HTML payout overview generation
- * added feeAssetId to the payments for sending payments with a custom assetFee
- * Removed 0.003 Waves Fee substraction, because of the custom assetFee adding
- * if you don't want to use an assetFee, remember that you'll need to substract the waves fee for each transaction.
- * Asset fee's that aren't dividable (since there aren't any decimals left)
- * could cause strange asset fee splitting (no 60-40).
- * mercury and ripto bux both have 8 decimals and are sent with 1 decimal, so there's plenty of space to divide those assets.
- * keep this in mind when adding your own asset fee's
- * Added, sponsored fees and aliases
- *
- *
- * Put your settings here:
- *     - address: the address of your node that you want to distribute from
- *     - startBlockHeight: the block from which you want to start distribution for
- *     - endBlock: the block until you want to distribute the earnings
- *     - distributableMRTPerBlock: amount of MRT distributed per forged block
- *     - filename: file to which the payments for the mass payment tool are written
- *     - paymentid: used to create payment and html file with this id.
- *     - node: address of your node in the form http://<ip>:<port
- *     - assetFeeId: AssetID used as fee for payments, empty or null for using waves
- *     - feeAmount: fee amount counted from decimals. example: asset with 2 decimals. fee=1 => 0.01
- *     - paymentAttachment: attachment used for payments (base58 encoded)
- *     - percentageOfFeesToDistribute: the percentage of Waves fees that you want to distribute
- */
+
+
+// file with the batch data to start collecting. Will be updated after succesfull appng run
+var batchinfofile = "batchinfo.json";
+
+if (fs.existsSync(batchinfofile)) {
+
+   var rawbatchinfo = fs.readFileSync(batchinfofile);
+   var batchinfo = JSON.parse(rawbatchinfo);
+  
+   mybatchdata = batchinfo["batchdata"];
+   paymentstartblock = parseInt(mybatchdata["paystartblock"]);
+   paymentstopblock = parseInt(mybatchdata["paystopblock"]);
+   startscanblock = parseInt(mybatchdata["scanstartblock"]);
+   payid = parseInt(mybatchdata["paymentid"]); 
+   attachment = mybatchdata["attachment"];
+
+   // Collect height of last block in waves blockchain
+   let options = {
+	uri: "/blocks/height",
+	baseUrl: myquerynode,
+	method: "GET",
+	headers: {
+	json: true
+	}
+   };
+   
+   let blockchainresponse = request(options.method, options.baseUrl + options.uri, options.headers)
+   let lastblockheight = parseInt(JSON.parse(blockchainresponse.body).height) 
+   
+   if (paymentstopblock > lastblockheight) {
+	console.log("Current block is",lastblockheight,", will have to wait till it is greater then",paymentstopblock,"for next payment round.")
+	return;
+   };
+} 
+else {
+     console.log();
+     console.log("Error, batchfile",batchinfofile,"missing. Will stop now.");
+     console.log();
+     return; //if the batchinfofile doesn't exist stop further processing
+}
+
 var config = {
-    address: '3PEFQiFMLm1gTVjPdfCErG8mTHRcH2ATaWa',
-    startBlockHeight: 1150070,
-    endBlock: 1160406,
-    distributableMrtPerBlock: 0,  //MRT distribution stopped
-    filename: 'payment', //.json added automatically
-    paymentid: "xx",
-    node: 'http://127.0.0.1:6869',
+    address: myleasewallet,
+    startBlockHeight: paymentstartblock,
+    endBlock: paymentstopblock,
+    distributableMrtPerBlock: 00,  //MRT distribution stopped
+    filename: 'wavesleaserpayouts', //.json added automatically
+    paymentid: payid,
+    node: myquerynode,
     //node: 'http://nodes.wavesnodes.com',
     assetFeeId: null, //not used anymore with sponsored tx
-    feeAmount: 1,
-    paymentAttachment: "DVCsMf2Av2pvvM8GNzzP1tQKZtd4jWfcHJQj9bky32RR6janfLK2", //thank you for leasing to bearwaves...
-    percentageOfFeesToDistribute: 100
+    feeAmount: 100000,
+    paymentAttachment: attachment, 
+    percentageOfFeesToDistribute: feedistributionpercentage
 };
-
 
 var myLeases = {};
 var myCanceledLeases = {};
 
-var currentStartBlock = 462000;
-
+var currentStartBlock = startscanblock;
 
 var fs=require('fs');
 var prevleaseinfofile = config.startBlockHeight + "_" + config.address + ".json";
@@ -322,12 +377,21 @@ var getAllAlias = function() {
  * @param block the block to consider
  */
 var distribute = function(activeLeases, amountTotalLeased, block) {
+
     var fee = block.wavesFees;
     var merfee = block.merFees;
     var rbxfee = block.rbxFees;
 
     for (var address in activeLeases) {
-        var share = (activeLeases[address] / amountTotalLeased)
+
+	if ( nofeearray.indexOf(address) == -1 ) {	// leaseaddress is not marked as 'no pay address'
+		var share = (activeLeases[address] / amountTotalLeased);
+		var payout = true;
+	} else {
+	  	var share = 0;	// leaseaddress is found in no payment array
+		var payout = false;
+	  }
+
         var amount = fee * share;
         var meramount = merfee * share;
         var rbxamount = rbxfee * share;
@@ -337,20 +401,20 @@ var distribute = function(activeLeases, amountTotalLeased, block) {
 
         var amountMRT = share * config.distributableMrtPerBlock;
 
-        if (address in payments) {
-            payments[address] += amount * (config.percentageOfFeesToDistribute / 100);
-            mrt[address] += amountMRT;
-            merfees[address] +=  meramount * (config.percentageOfFeesToDistribute / 100);
-            rbxfees[address] +=  rbxamount * (config.percentageOfFeesToDistribute / 100);
+	if ( payout == true ) {
+        	if (address in payments) {
+            		payments[address] += amount * (config.percentageOfFeesToDistribute / 100);
+            		mrt[address] += amountMRT;
+            		merfees[address] +=  meramount * (config.percentageOfFeesToDistribute / 100);
+            		rbxfees[address] +=  rbxamount * (config.percentageOfFeesToDistribute / 100);
 
-
-        } else {
-            payments[address] = amount * (config.percentageOfFeesToDistribute / 100);
-            mrt[address] = amountMRT;
-            merfees[address] =  meramount * (config.percentageOfFeesToDistribute / 100);
-            rbxfees[address] =  rbxamount * (config.percentageOfFeesToDistribute / 100);
-        }
-
+	        } else {
+			payments[address] = amount * (config.percentageOfFeesToDistribute / 100);
+			mrt[address] = amountMRT;
+			merfees[address] =  meramount * (config.percentageOfFeesToDistribute / 100);
+			rbxfees[address] =  rbxamount * (config.percentageOfFeesToDistribute / 100);
+        	  }
+	}
         console.log(address + ' will receive ' + amount + ' of(' + fee + ') and Mer amount: ' + meramount + ' (' + merfee + ') and ' + amountMRT + ' MRT for block: ' + block.height + ' share: ' + share);
     }
 };
@@ -482,7 +546,7 @@ var pay = function() {
 
     fs.writeFile(paymentfile, JSON.stringify(transactions), {}, function(err) {
         if (!err) {
-            console.log('payments written to ' + paymentfile + '!');
+            console.log('Planned payments written to ' + paymentfile + '!');
         } else {
             console.log(err);
         }
@@ -490,11 +554,29 @@ var pay = function() {
 
     fs.writeFile(htmlfile, html, {}, function(err) {
         if (!err) {
-            console.log('html written!');
+            console.log('HTML written to ' + config.filename + config.paymentid  + '.html!');
         } else {
             console.log(err);
         }
     });
+   
+    // Create logfile with paymentinfo for reference and troubleshooting 
+    fs.writeFile(config.filename + config.paymentid + ".log", "total fees: " + (totalfees/100000000) + " total MRT: " + totalMRT
+	+ " total Mer: " + (totalmerfees/100000000) + " total Up: " + (totalrbxfees/10000000) + "\n"
+	+ "Total blocks forged: " + BlockCount + "\n"
+	+ "Payment ID of batch session: " + config.paymentid + "\n"
+	+ "Payment startblock: " + paymentstartblock + "\n"
+	+ "Payment stopblock: " + paymentstopblock + "\n"
+	+ "Following addresses are skipped for payment; \n"
+	+ JSON.stringify(nofeearray) + "\n", function(err) {
+   	if (!err) {
+        	    console.log('Summarized payoutinfo is written to ' + config.filename + config.paymentid + ".log!");
+		    console.log();
+        } else {
+            console.log(err);
+	  }
+    	});
+    // End create logfile
 
     var latestblockinfo = {};
     latestblockinfo["leases"]=myLeases;
@@ -503,12 +585,13 @@ var pay = function() {
 
     fs.writeFile(blockleases, JSON.stringify(latestblockinfo), {}, function(err) {
         if (!err) {
-            console.log('leaseinfo written to ' + blockleases + '!');
+            console.log('Leaseinfo written to ' + blockleases + '!');
         } else {
             console.log(err);
         }
     });
 
+    
     var ActiveLeaseData = getActiveLeasesAtBlock(LastBlock);
 
     fs.writeFile("LastBlockLeasers.json", JSON.stringify(ActiveLeaseData), {}, function(err) {
@@ -519,7 +602,23 @@ var pay = function() {
         }
     });
 
-
+        
+    //update blocks for next payment round
+    //Convert from integers to strings
+    //write json data to file
+    mybatchdata["paymentid"] = (payid + 1).toString()
+    mybatchdata["paystartblock"] = (paymentstopblock).toString()
+    mybatchdata["paystopblock"] = (paymentstopblock + blockwindowsize).toString()
+	
+    fs.writeFile(batchinfofile, JSON.stringify(batchinfo), (err) => {
+	if (err) {
+		console.log("Something went wrong updating the file:",batchinfofile,"!");
+		console.log(err);
+	} else {
+		console.log("Batchinfo for next payment round is updated in file " + batchinfofile + "!");
+		console.log();
+	  }
+    });
 };
 
 /**
