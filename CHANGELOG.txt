@@ -1,0 +1,98 @@
+/* =====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES===WAVES====WAVES====
+ *
+ * This is Plukkie's version of the LPoSDistributor script, a revenue sharing application for the WAVES blockchain
+ * Many thanks to original version of Marc Jansen and the fork of W0utje.
+ *
+ * I call this version "The lazy one', due to the automated nature. Only edit once when you install , no more.
+ *
+ * I do not have any worth mentioning coding experience. In my daily job, I am a hardcore network architect.
+ * But I was always inspired by application programming and network automation. I am lazy and like to automate.
+ * With my analytic skills I decided to put some effort in javascript and figure out how the original script works.
+ * And came to the conclusion that it is worth to make it more 'lazy' style of paying out transaction fees.
+ * I am a strong believer of decentralized banking and I like blockchain and you're never to old to learn stuff.
+ * Hope you forgers enjoy my contribution to the community.
+ *
+ * Donations are welcome if you like this version of the script: 'The lazy one'
+ * - you can send waves to wallet alias 'plukkie'
+ * - you can send your lease to waves alias 'plukkieforger'
+ * 
+ * Thank you and Enjoy!
+ *
+/* =====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES===WAVES====WAVES====
+
+Version 1.1
+-----------
+- date 8 november 2018
+
+- Added queueing mechanism, that stores a batchID for every collection session when finished
+  
+  Collector sessions ('node appng.js OR start_collector.sh') are added to a payment queue file (payqueue.dat) when finished.
+  This way you can run session after session, without doing immediate checks or payments if you like. Every session
+  is written with it's batchID to the queue file and the payoutinfo is logged to payoutfiles with it's batchID added
+  to the filenames.
+  The checkPaymentsFile.js script for checking and the massPayment.js for actual payments automatically scans the
+  queue file and sequentially do their respective jobs with a nice screen print of results
+
+- Checking payments with checkPaymentsFile.js now automatically scans the payqueue.dat file and ends with the sum of
+  all payment jobs. This way you get an idea of the total payments that will be done
+
+- Removed the fee calulation for tokens rbx, mer and bearwaves from the script (sorry w0utje).
+  Due to the feature 'sponsored coins' this is obsolete.
+
+- Added various error handlers, to avoid script crashes or detect when people would edit files by hand
+  - like no payqueue.dat file
+  - duplicate batchIDs would be detected (this only happens if you would modify the batchinfo.json by hand,
+    which normally is not needed at all)
+  - missing batchinfo.json file
+  - missing directory where succesfull payout files will be stored (it's autmatically created then)
+  - detect when the payment stop block is larger then the current blockheight of the blockchain
+  - and more...
+
+- MassPayment.js is now modified to handle a crashed session, if the payqueue has multiple jobs.
+  If a massPayment session crashed, just make note of the batchID and the last succesfull transaction counter,
+  and edit the variables const crashconfig = {
+			=>	batchidstart: '0',
+			=>	transactionstart: '0' }
+
+  Change the numbers in the massPayment.js file and start the massPayment session again and you should be fine.
+  NOTE: The transactionstart nr should be the last succesfull number + 1
+
+- MassPayment.js:
+  - After succesfull ending of all transactions of a batch, the batchID is removed
+    from the payqueue.dat
+  - After succesfull ending of all transactions of a batch, the leaserpayout and logfiles are moved
+    to the folder paymentDone/
+    This gives you the possibility to check afterwards payment jobs with logs.
+  - automatically created a backup of the payqueue.dat file, which holds all payment batches 
+
+- Added CHANGELOG.txt to track changes to the versions of the script
+
+- Added various minor cosmetic errors of the script
+================================================================================================================
+ * V 1.0
+ * Plukkie's edit of W0utjes's LPoSDistributor V 2.0.3
+ *
+ * CHANGES
+ * - Created seperate batchinfo.json for initial key/value pairs, which are updated after a successfull run
+ *   After each succesfull run the following XXXXX values are updated;
+ *       "paymentid": "XXXX",
+ *       "paystartblock": "XXXXX",
+ *       "paystopblock": "XXXX",
+ *   The difference between paystart/paystop block will be the blockwindowsize setting
+ *
+ * - Possibility to set blockwindowsize = X, where X defines how many blocks will be scanned for payments
+ *
+ * - Possibility to set wallet addresses in the variable 'nofeearray [ ];' which will NOT get revenue sharing.
+ *   This can be used if you are rewarded with leases, which do not expect payout from you
+ *   Default it's empty, so all incoming leasers get revenue sharing
+ *
+ * - Added paymentid which complements the '<leaserpayoutfilename> + <paymentid>' to make the payoutfiles unique to every session.
+ *   All files are stored now and actual payouts with masspayment script can be done for every unique payout files
+ *
+ * - Added logfile creation after a succesfull session which summarizes relevant info, which can be used for reference or analysis
+ *   This is the '<leaserpayoutfilename>.log'
+ *
+ * - Added bash script 'start_collector.sh' which optimizes some runtime variables of 'node' binary
+ *   This can be used if regular execution of the appng.js script gives problems and terminates with errors
+ * ================================================================================================================= */
+
