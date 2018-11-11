@@ -200,7 +200,11 @@ could fail and leasers don't receive what they should. It's up to you, if you fe
 with automated payments. If not, you can just execute massPayment.js by hand.\
 MassPayment has forseen in the event that crashes or failed transactions (due to whatever reason) happen,\
 by which you can add the batchID and the number of the last succesfull transactionnr.+1, to the file\
-and then start massPayment.js again. Transactions will be executed from where the failures started.
+and then start massPayment.js again. Transactions will be executed from where the failures started.\
+The nice thing is that the three tools are decoupled. So, if you run the collector three times a week\
+and the the checks every week and the payout just once a month or whenever you feel it's a good moment,\
+that's all fine. It also depends on the frequency of blockhits for your node and the blockwindows size\
+you configure. It's all up to you and it doesn't bite one another.
 
 
 ## Airdrops
