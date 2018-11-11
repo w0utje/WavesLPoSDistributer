@@ -9,9 +9,10 @@ Donations are welcome if you like this version of the script: 'The lazy' version
 
 ## Installation steps: prerequisits
 First of all, you need to install Node.js (https://nodejs.org/en/) and NPM. This version is succesfully tested with versions;
- - node v10.12.0
- - npm 6.4.1
+ - node v10.12.0 (allthough lower should work probably)
+ - npm 6.4.1 (allthough lower should work probably)
  - tested on Ubuntu 14.0 with kernel 4.4.0-116-generic (allthough of minor importance)
+ - get the latest version from github: git clone https://github.com/plukkie/WavesLPoSDistributer.git
 
 ## Installation steps: first time users
 These steps are for users that do not use older an version of the LPoSdistributer package yet.
