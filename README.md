@@ -87,7 +87,7 @@ If you use other version of the script, like from Marc jansen or w0utje, it's ea
    - The last leaserpayout info file, which looks like following;
      1250000_3P7vmba4wWLXq6t1G8VaoaVqbUb1dDp8gj4.json
 
-     This name represents the <stopblock>_ from the last session + the wallet address of your node
+     This name represents the "<stopblock>"_ from the last session + the wallet address of your node
 4. Now CD into the NEW version directory
 5. EDIT the batchinfo.json file with nano or vim;
 ```sh
