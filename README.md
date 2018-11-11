@@ -72,7 +72,8 @@ var config = {
     apiKey: 'your api key'				<== Put here the API key of your Waves node
 };
 ```
-
+NOTE
+For security reasons, remove 'rwx' worldrights from massPayment.js -> ```sh chmod o-rwx massPayment.js``` 
 Now you can jump to chapter "Running the collector sessions"
 
 ## Installation steps: users that already use previous versions of LPoSdistributer script
