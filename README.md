@@ -39,7 +39,7 @@ EDIT file batchinfo.json with vim or nano;
     }
 }
 ```
-   NOTE . 
+   NOTE 
    This file is updated automatically after the collector session finishes.
    The size of the next batch (paystart / paystop blocks), is used from the 'blockwindowsize'
    config value in the appng.js file.
