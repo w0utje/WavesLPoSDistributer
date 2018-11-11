@@ -8,8 +8,8 @@
 
 var config = {
     payoutfileprefix: 'wavesleaserpayouts',
-    node: 'http://localhost:6869',		//Change this value to your blockchain node/API port (defaults to localhost)
-    apiKey: 'your api key'			//Put here the API key of your Waves node
+    node: 'http://localhost:6869',
+    apiKey: 'your api key'
 };
 
 const paymentqueuefile = 'payqueue.dat'
@@ -147,6 +147,10 @@ var start = function(jsonarray, queueid) {
  */
 var doPayment = function(payments, counter, batchid) {
 	var payment = payments[counter];
+
+	if ( payment.assetId == undefined ) { var assetname = 'Waves' }
+	else { assetname = payment.assetId }
+
 	setTimeout(function() {
 		request.post({  url: config.node + '/assets/transfer',
 				json: payment,
@@ -156,7 +160,7 @@ var doPayment = function(payments, counter, batchid) {
                 				console.log(err);
             				} else {
                 				console.log('[batchID ' + batchid + '] ' + counter + ' send ' + payment.amount + 
-							    ' of ' + payment.assetId + ' to ' + payment.recipient + '!');
+							    ' of ' + assetname + ' to ' + payment.recipient + '!');
                 				counter++;
 						if (counter < payments.length) {
 							doPayment(payments, counter, batchid);
