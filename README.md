@@ -1,5 +1,5 @@
 # WavesLPoSDistributer
-A revenue distribution tool for Waves nodes
+A revenue distribution tool for Waves nodes\
 Welcome to Plukkies version of the LPoSdistribution script, 'the lazy' version,
 which queues up multiple sessions and automates next session info :-)
 
@@ -8,7 +8,8 @@ Donations are welcome if you like this version of the script: 'The lazy' version
   - you can send your lease to waves alias 'plukkieforger'
 
 ## Installation steps: prerequisits
-First of all, you need to install Node.js (https://nodejs.org/en/) and NPM. This version is succesfully tested with versions;
+First of all, you need to install Node.js (https://nodejs.org/en/) and NPM.\
+This version is succesfully tested with versions;
  - node v10.12.0 (allthough lower should work probably)
  - npm 6.4.1 (allthough lower should work probably)
  - tested on Ubuntu 14.0 with kernel 4.4.0-116-generic (allthough of minor importance)
@@ -39,13 +40,13 @@ EDIT file batchinfo.json with vim or nano;
     }
 }
 ```
-   NOTE 
-   This file is updated automatically after the collector session finishes.
-   The size of the next batch (paystart / paystop blocks), is used from the 'blockwindowsize'
-   config value in the appng.js file.
+NOTE\
+This file is updated automatically after the collector session finishes.\
+The size of the next batch (paystart / paystop blocks), is used from the\
+'blockwindowsize' configuration value in the appng.js file.
 
 4. EDIT file appng.js with vim or nano;
-   This file is the collector that checks all blocks for leases and fees
+   This file is the collector that checks all blocks for leases and fees;
 ```sh
 const myleasewallet = '<your node wallet>';		<== Put here the address of the wallet that your node uses
 const myquerynode = "http://localhost:6869";		<== The node and API port that you use (defaults to localhost)
@@ -72,16 +73,16 @@ var config = {
     apiKey: 'your api key'				<== Put here the API key of your Waves node
 };
 ```
-NOTE
-For security reasons, remove 'rwx' worldrights from massPayment.js -> ```sh chmod o-rwx massPayment.js``` 
-Now you can jump to chapter "Running the collector sessions"
+NOTE\
+For security reasons, remove 'rwx' worldrights from massPayment.js -> ```sh chmod o-rwx massPayment.js``` \
+Now you can jump to chapter "Running the collector sessions".
 
 ## Installation steps: users that already use previous versions of LPoSdistributer script
 If you use other version of the script, like from Marc jansen or w0utje, it's easy migration;
 
 1. Finish up all payments
 2. Rename directory of your current version to 'WavesLPoSDistributer.old'
-3. If correct, you new version directory is called 'WavesLPoSDistributer'
+3. If correct, you new version directory is called 'WavesLPoSDistributer'\
    CD into the OLD version dir and copy following files to the NEW version dir;
 
    - LastBlockLeasers.json
@@ -106,7 +107,7 @@ If you use other version of the script, like from Marc jansen or w0utje, it's ea
     }
 }
 ```
-6. Now follow steps explained earlier in 'Installation steps: first time users' but,
+6. Now follow steps explained earlier in 'Installation steps: first time users' but,\
 You should SKIP step 3 !!!
 
 ## Running the collector sessions
@@ -114,21 +115,27 @@ After a successful configuration of the tool, it could be started with:
 ```sh
 node appng.js OR start_collector.sh
 ```
-NOTE1
-The script can consume a serious amount of memory and exists with errors during it's run.
-Therefore I've put 'start_collector.sh' script as starter which runs 'node appng.js' with some memory optimized settings. 
+NOTE0\
+If you can't start 'start_collector', check is the script has execute 'x' on it.\
+If not add with: ```chmod u+x start_collector```
+
+NOTE1\
+The script can consume a serious amount of memory and exists with errors during it's run.\
+Therefore I've put 'start_collector.sh' script as starter which runs 'node appng.js' with some memory optimized settings.\
 For me it works with tweaks to 65KB of stack memory and 8GB of available RAM. So use 'start_collector.sh' if you run into problems.
 
-NOTE2
-To run the collector tool every night @1 AM, edit /etc/crontab and put (where the tool WavesLPoSDistributer is located in /home/myuser/...):
+NOTE2\
+To run the collector tool every night @1 AM, edit /etc/crontab and put in following line;\
+```sh
 00 01 * * * root cd /home/myuser/WavesLPoSDistributer/ && ./start_collector.sh
-
+```
 After the tool ran, it finishes up by writing the actual payments to be done into the file which is configured in the script by:
 ```sh
 var config = {
 	filename: 'wavesleaserpayouts',
 ```
-The name is constructed together with the paymentid (or batchID) of every batch session. So, for the first run, the following three files will be created;
+The name is constructed together with the paymentid (or batchID) of every batch session.\
+So, for the first run, the following three files will be created;
 - wavesleaserpayouts1.json
 - wavesleaserpayouts1.html
 - wavesleaserpayouts1.log
@@ -142,8 +149,7 @@ The script for checking is checkPaymentsFile.js. After you configured some setti
 ```sh
 node checkPaymentsFile.js
 ```
-The script reads all all batchIDs from the payqueue.dat file and the corresponding leaser files that were constructed by the collector tool.
-It does only checking, nothing else. The results for all pending payments is printed on the screen.
+The script reads all all batchIDs from the payqueue.dat file and the corresponding leaser files that were constructed by the collector tool. It does only checking, nothing else. The results for all pending payments is printed on the screen.\
 After checking this information, you have a good overview what tokens and the amounts are planned for payout!
 
 ## Doing the payments
@@ -151,20 +157,20 @@ For the actual payout, the massPayment.js tool needs to be run. It can be starte
 ```sh
 node massPayment.js
 ```
-All batchIDs are sequencially read from the payment queue and the transactions are executed.
-When a job finishes, the batchID is removed from the payqueue.dat and the three wavesleaserpayoutX.* files
+All batchIDs are sequencially read from the payment queue and the transactions are executed.\
+When a job finishes, the batchID is removed from the payqueue.dat and the three wavesleaserpayoutX.* files\
 are moved to the archival directory (paymentsDone/).
 
-NOTE
-If there would be a crash of the system, script or other transaction breaking interruption,
-make note of the last succesfull transaction counter and the batchID. Then edit the massPayment.js
+NOTE\
+If there would be a crash of the system, script or other transaction breaking interruption,\
+make note of the last succesfull transaction counter and the batchID. Then edit the massPayment.js\
 file and change these values for:
 ```sh
 const crashconfig = {
         batchidstart: '0',		<== batchID here
         transactionstart: '0' }		<== last succesfull transaction +1
 ```
-Then start the 'node massPayment.js'.
+Then start the 'node massPayment.js'.\
 The values you can leave in or you can put it back to 0 / 0 if you like.
 
 ## Why three seperate tools?
@@ -173,10 +179,28 @@ On the other hand, it does not provide any drawback since both scripts could als
 ```sh
 node appng.js && node massPayment.js or ./start_collector && node massPayment.js
 ```
-However, it is strongly recommended to check the payments before the actual payments are done.
-So you could as a best practise put the collector and checkPaymentFile in crontab and mail the output
-for weekly scanning the results. And then plan the actual massPayment in crontab on the first of the month.
-That way you have time to judge the payout amounts.
+However, it is strongly recommended to check the payments before the actual payments are done.\
+So what you could do for example, run from crontab;
+- run the collector session every saterday evening
+- run the checkPaymentFile every sunday, mail the output, so you have visibility
+- run the massPayment job every tuesday
+
+With this scheme, you have a nice automated schema and works as follows;
+- Every wednesday & saterday, if the collector batchsize is still too large (because the mainnet blockheight is to low),
+  the cronjob exits and waits till next collector day. If the blockrange fits, the payments are collected and
+  the job is logged and queued
+- Every Sunday, the checkPayment job checks the payqueue. If empty, it exits. If there is (are) job(s) in the queue,
+  the paymentdata for all batchIDs are shown and your output was send by email. You have time to check the results
+- Every tuesday, the payment is done for all batchIDs in the queue.
+
+NOTE\
+It safe to schedule the collector and check jobs. However, regarding payments,\
+it's always possible that something disrupts the transaction process, in which payments\
+could fail and leasers don't receive what they should. It's up to you, if you feel confident\
+with automated payments. If not, you can just execute massPayment.js by hand.\
+MassPayment has forseen in the event that crashes or failed transactions (due to whatever reason) happen,\
+by which you can add the batchID and the number of the last succesfull transactionnr.+1, to the file\
+and then start massPayment.js again. Transactions will be executed from where the failures started.
 
 
 ## Airdrops
