@@ -4,8 +4,8 @@ Welcome to Plukkies version of the LPoSdistribution script, 'the lazy' version,
 which queues up multiple sessions and automates next session info :-)
 
 Donations are welcome if you like this version of the script: 'The lazy' version
- * - you can send waves to wallet alias 'plukkie'
- * - you can send your lease to waves alias 'plukkieforger'
+  - you can send waves to wallet alias 'plukkie'
+  - you can send your lease to waves alias 'plukkieforger'
 
 ## Installation steps: prerequisits
 First of all, you need to install Node.js (https://nodejs.org/en/) and NPM. This version is succesfully tested with versions;
@@ -39,7 +39,7 @@ EDIT file batchinfo.json with vim or nano;
     }
 }
 ```
-   NOTE
+   NOTE . 
    This file is updated automatically after the collector session finishes.
    The size of the next batch (paystart / paystop blocks), is used from the 'blockwindowsize'
    config value in the appng.js file.
