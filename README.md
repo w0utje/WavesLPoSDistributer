@@ -1,7 +1,9 @@
 # WavesLPoSDistributer
 A revenue distribution tool for Waves nodes\
 Welcome to Plukkies version of the LPoSdistribution script, 'the lazy' version,
-which queues up multiple sessions and automates next session info :-)
+which queues up multiple sessions and automates next session info :-)\
+
+Many thanks to original version of Marc Jansen and the fork of W0utje!\
 
 Donations are welcome if you like this version of the script: 'The lazy' version
   - you can send waves to wallet alias '**plukkie**'
