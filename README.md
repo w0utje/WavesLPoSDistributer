@@ -117,7 +117,7 @@ node appng.js OR start_collector.sh
 ```
 NOTE0\
 If you can't start 'start_collector', check is the script has execute 'x' on it.\
-If not add with: ```chmod u+x start_collector```
+If not add with: ```chmod u+x start_collector.sh```
 
 NOTE1\
 The script can consume a serious amount of memory and exists with errors during it's run.\
