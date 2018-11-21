@@ -30,18 +30,17 @@
 
 
 // START - Put your settings here
-const myleasewallet = '3P7ajba4wWLXq6t1G8VaoaVqbUb1dDp8fm4';	//Put here the address of the wallet that your node uses
+const myleasewallet = '<your node wallet>';	//Put here the address of the wallet that your node uses
 const myquerynode = "http://localhost:6869";	//The node and API port that you use (defaults to localhost)
-const feedistributionpercentage = 100;		//How many % do you want to share with your leasers (defaults to 90%)
-const mrtperblock = 10;				//How many MRT tokens per block do you want to share with your leasers (default 0)
-const blockwindowsize = 10000; 			//how many blockss to proces for every paymentcycle
+const feedistributionpercentage = 90;		//How many % do you want to share with your leasers (defaults to 90%)
+const mrtperblock = 0;				//How many MRT tokens per block do you want to share with your leasers (default 0)
+const blockwindowsize = 5000; 			//how many blockss to proces for every paymentcycle
 
 // Put here wallet addresses that will receive no fees
 // Could be wallets that award you with leases like the waves small node program
 // var nofeearray = [ "3P6CwqcnK1wyW5TLzD15n79KbAsqAjQWXYZ",       //index0
 //                    "3P9AodxBATXqFC3jtUydXv9YJ8ExAD2WXYZ" ];
-var nofeearray = [ "3PQLCT68cGMgodHuuXu3qftDx8M8s8mgMyx" ]; 
-//var nofeearray = [ ]; 
+var nofeearray = [ ]; 
 // END - your settings
 
 
