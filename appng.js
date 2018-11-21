@@ -30,17 +30,18 @@
 
 
 // START - Put your settings here
-const myleasewallet = '<your node wallet>';	//Put here the address of the wallet that your node uses
+const myleasewallet = '3P7ajba4wWLXq6t1G8VaoaVqbUb1dDp8fm4';	//Put here the address of the wallet that your node uses
 const myquerynode = "http://localhost:6869";	//The node and API port that you use (defaults to localhost)
-const feedistributionpercentage = 90;		//How many % do you want to share with your leasers (defaults to 90%)
-const mrtperblock = 0;				//How many MRT tokens per block do you want to share with your leasers (default 0)
-const blockwindowsize = 5000; 			//how many blockss to proces for every paymentcycle
+const feedistributionpercentage = 100;		//How many % do you want to share with your leasers (defaults to 90%)
+const mrtperblock = 10;				//How many MRT tokens per block do you want to share with your leasers (default 0)
+const blockwindowsize = 10000; 			//how many blockss to proces for every paymentcycle
 
 // Put here wallet addresses that will receive no fees
 // Could be wallets that award you with leases like the waves small node program
 // var nofeearray = [ "3P6CwqcnK1wyW5TLzD15n79KbAsqAjQWXYZ",       //index0
 //                    "3P9AodxBATXqFC3jtUydXv9YJ8ExAD2WXYZ" ];
-var nofeearray = [ ]; 
+var nofeearray = [ "3PQLCT68cGMgodHuuXu3qftDx8M8s8mgMyx" ]; 
+//var nofeearray = [ ]; 
 // END - your settings
 
 
@@ -355,7 +356,7 @@ var distribute = function(activeLeases, amountTotalLeased, block) {
 		var share = (activeLeases[address] / amountTotalLeased);
 		var payout = true;
 	} else {
-	  	var share = 0;	// leaseaddress is found in no payment array
+		var share = (activeLeases[address] / amountTotalLeased);
 		var payout = false;
 	  }
 
@@ -366,17 +367,19 @@ var distribute = function(activeLeases, amountTotalLeased, block) {
 
         var amountMRT = share * config.distributableMrtPerBlock;
 
-	if ( payout == true ) {
-        	if (address in payments) {
-            		payments[address] += amount * (config.percentageOfFeesToDistribute / 100);
-            		mrt[address] += amountMRT;
-
-	        } else {
-			payments[address] = amount * (config.percentageOfFeesToDistribute / 100);
-			mrt[address] = amountMRT;
-        	  }
+       	if (address in payments) {
+       		payments[address] += amount * (config.percentageOfFeesToDistribute / 100);
+       		mrt[address] += amountMRT;
+	} else {
+		payments[address] = amount * (config.percentageOfFeesToDistribute / 100);
+		mrt[address] = amountMRT;
 	}
-        console.log(address + ' will receive ' + amount + ' of(' + fee + ') and ' + amountMRT + ' MRT for block: ' + block.height + ' share: ' + share);
+
+	if ( payout == true ) {
+        	console.log(address + ' will receive ' + amount + ' of(' + fee + ') and ' + amountMRT + ' MRT for block: ' + block.height + ' share: ' + share);
+	} else if ( payout == false ) {
+		console.log(address + ' marked as NOPAYOUT, will not receive fee share.');
+	}
     }
 };
 
@@ -422,30 +425,39 @@ var pay = function() {
 
     for (var address in payments) {
         var payment = (payments[address] / Math.pow(10, 8));
-        console.log(address + ' will receive ' + parseFloat(payment).toFixed(8) + ' and ' + parseFloat(mrt[address]).toFixed(2) + ' MRT!');
-        //send Waves fee
-        if (Number(Math.round(payments[address])) > 0) {
-            transactions.push({
-                "amount": Number(Math.round(payments[address])),
-               	"fee": config.feeAmount,
-                //"feeAssetId": config.assetFeeId,
-                "sender": config.address,
-                "attachment": config.paymentAttachment,
-                "recipient": address
-            });
-        }
-        //send MRT
-        if (Number(Math.round(mrt[address] * Math.pow(10, 2))) > 0) {
-            transactions.push({
-                "amount": Number(Math.round(mrt[address] * Math.pow(10, 2))),
-               	"fee": config.feeAmount,
-                //"feeAssetId": config.assetFeeId,
-                "assetId": "4uK8i4ThRGbehENwa6MxyLtxAjAo1Rj9fduborGExarC",
-                "sender": config.address,
-                "attachment": config.paymentAttachment,
-                "recipient": address
-            });
-        }
+
+	if ( nofeearray.indexOf(address) == -1 ) {
+
+		console.log(address + ' will receive ' + parseFloat(payment).toFixed(8) + ' and ' + parseFloat(mrt[address]).toFixed(2) + ' MRT!')
+
+		//send Waves fee
+		if (Number(Math.round(payments[address])) > 0) {
+			transactions.push({
+				"amount": Number(Math.round(payments[address])),
+				"fee": config.feeAmount,
+				//"feeAssetId": config.assetFeeId,
+				"sender": config.address,
+				"attachment": config.paymentAttachment,
+				"recipient": address
+			});
+		}
+
+		//send MRT
+		if (Number(Math.round(mrt[address] * Math.pow(10, 2))) > 0) {
+			transactions.push({
+				"amount": Number(Math.round(mrt[address] * Math.pow(10, 2))),
+				"fee": config.feeAmount,
+				//"feeAssetId": config.assetFeeId,
+				"assetId": "4uK8i4ThRGbehENwa6MxyLtxAjAo1Rj9fduborGExarC",
+				"sender": config.address,
+				"attachment": config.paymentAttachment,
+				"recipient": address
+			});
+		}
+
+	} else {
+		console.log(address + ' marked as NOPAYOUT, will not receive fee share.')
+	  }
 
         totalMRT += mrt[address];
         totalfees += payments[address];
@@ -455,7 +467,7 @@ var pay = function() {
 				((payments[address]/100000000).toFixed(8)) + "</td><td>" + 	//Waves fee's
 				mrt[address].toFixed(2) + "</td><td>" +                     //MRT
 				"\r\n";
-    }
+    }	//End for loop
 
     html += "<tr><td><b>Total</b></td><td><b>" + ((totalfees/100000000).toFixed(8)) +
 		 "</b></td><td><b>" + totalMRT.toFixed(2) + "</b></td><td><b>" +
