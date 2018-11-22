@@ -72,6 +72,9 @@ var start = function() {
 // - arg filename: the payoutfile name to be checked
 // - batchid: paymentid for job
 // - jobnr: sequence nr of all jobs (starts at 1)
+
+var blocks = 0
+
 function checkpayouts (filename, batchid, jobnr) {
 
 	var assets = {};
@@ -87,6 +90,7 @@ function checkpayouts (filename, batchid, jobnr) {
         	var batchlogfile = config.payoutfileprefix + batchid + '.log'
         	var batchlogarray = (fs.readFileSync(batchlogfile).toString()).split(os.EOL)
         	var forgedblocksstring = batchlogarray.find(a =>a.includes("forged:"));
+		blocks += parseInt(forgedblocksstring.substring(forgedblocksstring.indexOf(":")+1,forgedblocksstring.length))
         	return forgedblocksstring
 	}
 
@@ -195,7 +199,7 @@ function checkpayouts (filename, batchid, jobnr) {
 						console.log(" - " + (asset.amount / Math.pow(10, asset.decimals)), assetid + " will be paid!");
 						i++
 					}
-					console.log();
+					console.log('\ntotal blocks: ' + blocks + '\n');
 				  }
 			}, 150);
 		} 
