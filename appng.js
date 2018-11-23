@@ -406,8 +406,8 @@ var pay = function() {
 "<div class=\"container\">" +
 "  <h3>Fee's between blocks " + config.startBlockHeight + " - " + config.endBlock + ", Payout #" + config.paymentid + "</h3>" +
 "  <h4>(LPOS address: " + config.address + ")</h4>" +
-"  <h5>29-06-2017: Hi all, again a short update of the fee's earned by the bearwaves node. Automated distribution, riding on BearWaves $BEAR. Cheers!</h5> " +
-"  <h5>You can always contact us by <a href=\"mailto:bearwaves@outlook.com\">E-mail</a> or in Waves Slack @w0utje <img src=\"https://www.bearwaves.nl/wp-content/uploads/2017/08/banksy.jpg\" style=\"width:50px;height:50px;\"></h5>" +
+"  <h5>29-06-2017: Hi all, again a short update of the fee's earned by the wavesnode 'Plukkie'. Greetings!</h5> " +
+"  <h5>You can always contact me by <a href=\"mailto:plukkie@gmail.com\">E-mail</a></h5>" +
 "  <h5>Blocks forged: " + BlockCount + "</h5>" +
 "  <table class=\"table table-striped table-hover\">" +
 "    <thead> " +
@@ -415,8 +415,6 @@ var pay = function() {
 "        <th>Address</th>" +
 "        <th>Waves</th>" +
 "        <th>MRT</th>" +
-"        <th>Mercury</th>" +
-"        <th>Ripto Bux</th>" +
 
 "      </tr>" +
 "    </thead>" +
