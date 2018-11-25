@@ -104,7 +104,7 @@ If you use other version of the script, like from Marc jansen or w0utje, it's ea
                                                             It doesn't really matter, as long as it is higher than paystartblock.
                                                             It only counts for the first run, and if no blocks were forged yet, that
                                                             is no problem. Follow up session results are just queued up in line :-))
-        "scanstartblock": "1044012"                     <== For best practise, you can put here the blockheight when your first leaser came in.
+        "scanstartblock": "1044012"                     <== For best practise, you can put here the blockheight of your first ACTIVE lease.
 							    It's only needed when you would loose the last leaserpayoutfiles for some reason.
     }
 }
