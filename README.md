@@ -38,7 +38,7 @@ EDIT file batchinfo.json with vim or nano;
 							    It doesn't really matter, as long as it is higher than paystartblock.
 							    It only counts for the first run, and if no blocks were forged yet, that
 							    is no problem. Follow up session results are just queued up in line :-))
-        "scanstartblock": "1044012"			<== Put here the blockheight when your first leaser came in
+        "scanstartblock": "1044012"			<== Put here the blockheight of the first ACTIVE lease
     }
 }
 ```
