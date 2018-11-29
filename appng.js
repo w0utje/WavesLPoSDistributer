@@ -54,7 +54,6 @@ var payqueuefile    = "payqueue.dat";
 
 if (fs.existsSync(batchinfofile)) {
 
-   var backupbatchinfo = fs.writeFileSync(batchinfofile + ".bak",fs.readFileSync(batchinfofile))        //Create backup of batchdatafile
    var rawbatchinfo = fs.readFileSync(batchinfofile);
    var batchinfo = JSON.parse(rawbatchinfo);
   
@@ -81,7 +80,8 @@ if (fs.existsSync(batchinfofile)) {
    if (paymentstopblock > lastblockheight) {
 	console.log("Current block is",lastblockheight,", will have to wait till it is greater then",paymentstopblock,"for next payment round.")
 	return;
-   };
+   } else { var backupbatchinfo = fs.writeFileSync(batchinfofile + ".bak",fs.readFileSync(batchinfofile)) }  //Create backup of batchdatafile
+
 } 
 else {
      console.log();
