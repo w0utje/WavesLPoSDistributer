@@ -152,7 +152,10 @@ The script for checking is checkPaymentsFile.js. After you configured some setti
 node checkPaymentsFile.js
 ```
 The script reads all all batchIDs from the payqueue.dat file and the corresponding leaser files that were constructed by the collector tool. It does only checking, nothing else. The results for all pending payments is printed on the screen.\
-After checking this information, you have a good overview what tokens and the amounts are planned for payout!
+The checker also calculates the cost for single transactions (payment tool massPayment.js) and the cost for masstransfers (masstx.js).
+Often the number of transactions are high enough to benefit from masstransfers, which are often cheapest :-)
+See more about both payment psossibilities in next chaper (doing the payments).
+After checking this information, you have a good overview what tokens and the amounts are planned for payout and which transaction type is best to use!
 
 ## Doing the payments
 For the actual payout, the massPayment.js tool needs to be run. It can be started with:
