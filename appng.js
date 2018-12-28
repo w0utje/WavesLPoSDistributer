@@ -1,11 +1,11 @@
 /* =================================================================================================================
- * V 1.1	'The lazy' version
+ * V 1.2	'The lazy' version
  *
  * Plukkie's edit of W0utjes's LPoSDistributor V 2.0.3
  *
  * Donations are welcome if you like this version of the script: 'The one stop edit' version
  * - you can send waves to wallet alias 'plukkie'
- * - you can send your lease to waves alias 'plukkieforger'
+ * - you can LEASE your waves to alias 'plukkieforger' or 'stickypete'
  *
  * Please see CHANGELOG.txt for all features/changes
  * Please see README.md for complete explanation of LPoSdistributer package
