@@ -18,7 +18,29 @@ var payjobs;
 var payjobcounter = 0;
 var assetsumarray = {};
 var assetamount = 0;
+var allbatchsinglecost = 0
+var allbatchmasstxcost = 0
 
+const transferfee = 100000
+const masstransferfee = 50000
+const maxmasstransfertxs = 100 //Maximum nr of transactions that fit in 1 masstransfer
+
+//This function rounds a number up to the nearest upper number
+//i.e. number is 230000, upper is 100000 -> 300000
+//i.e. number is 180000, upper is 100000 -> 200000
+//@params number: the number to normalize
+//@params upper: the nearest upper number for roundup
+function roundup(number, upper) {
+
+        var i = number - upper
+
+        while ( i > upper ) {
+                i -= upper
+        }
+        var delta = upper - i
+	number += delta
+        return number
+}
 
 //This function is started first in main program
 //It executes some test cases before main start() runs
@@ -104,11 +126,13 @@ function checkpayouts (filename, batchid, jobnr) {
                				assets[payment.assetId] = {	//Set token string in asset array
 						batchid: batchid,
                					amount: payment.amount,	//set amount from payment {} to asset.amount
+						transactions: 1, //set counter on first transaction
                					decimals: 0,
                					name: ''	//name is empty
                				};
        				} else {			//This 'assetId' was already set in assets array 
                				assets[payment.assetId].amount += payment.amount;	//Increase the amount with next payment {} amount
+					assets[payment.assetId].transactions++ //increase counter asset transactions
        	  			}
        			} else {	// 'assetId' not found in one set {} -> means WAVES transactions
        				if (!assets['Waves']) {		//First time found -> not in var assets {} yet
@@ -116,11 +140,13 @@ function checkpayouts (filename, batchid, jobnr) {
                 			assets['Waves'] = {	//Set Waves string in asset array
 						batchid: batchid,
                     				amount: payment.amount,	//set amount from payment {} to Waves.amount in assets array
+						transactions: 1, //Set counter on first transaction
                     				decimals: 8,
                     				name: 'Waves'	//set name key to 'Waves' in assets array
                 			};
             			} else {			//Waves bestaat al in assets array
                				assets['Waves'].amount += payment.amount;	//Increase the amount with next payment {} amount
+					assets['Waves'].transactions++ //Increase counter Waves transactons
             			}
         		}
 		});	//End forEach
@@ -167,9 +193,36 @@ function checkpayouts (filename, batchid, jobnr) {
 
 		addAssetInfo(assets, function() {	//assets is the array filled with the total amounts for all assetIds
 
+			var singletransactions = 0
+			var masstransfers = 0
+			var singletxscosts = 0
+			var masstransfercosts = 0
+			var totalmasstransfers = 0
 			var i = 0
+
 			for (var assetId in assets) {	//For every asset found in one batch
+
        				var asset = assets[assetId];
+				singletransactions += asset.transactions //increase transactioncounter for single transactions
+				masstransfers = Math.ceil(asset.transactions/maxmasstransfertxs) //how many masstransfers for one asset
+				
+				if (masstransfers == 1) { //Only 1 masstransfer needed
+
+					var transfercost = transferfee + masstransferfee*asset.transactions
+					masstransfercosts += roundup(transfercost, transferfee)
+
+				} else { //More than 1 masstransfer needed
+
+					var lasttxs = asset.transactions - (masstransfers - 1) * maxmasstransfertxs //How many transactions in last masstransfer 
+					var lastmasstxscost = transferfee + masstransferfee*lasttxs //Cost for last masstransfer
+					masstransfercosts += roundup(lastmasstxscost, transferfee)
+
+					//How much is the cost for a masstransfers, other then the last
+					var transfercost = transferfee + masstransferfee*maxmasstransfertxs
+					masstransfercosts += (roundup(transfercost, transferfee))*(masstransfers-1) //Cost for all masstransfers (except last)
+				}
+
+				totalmasstransfers += masstransfers
 
 				i++	//Counter to know when we reached the end of the for loop
 				console.log("    " + jobnr + ": " + (asset.amount / Math.pow(10, asset.decimals)) + ' of ' + asset.name + ' will be paid!');		
@@ -180,9 +233,19 @@ function checkpayouts (filename, batchid, jobnr) {
 					assetsumarray[asset.name].amount += asset.amount	//Asset is found already, increase amount
 				  }
 
-				if ( assetsFound  == i ) { console.log() }	//Print empty line after last asset is returned in this  batch
-			}
+				if ( assetsFound  == i ) { //Reached last asset
+					console.log()	//Print empty line after last asset is returned in this  batch
+					singletxscosts = singletransactions*transferfee/Math.pow(10, 8)
+					masstransfercosts = masstransfercosts/Math.pow(10, 8)
 
+					console.log("    " + jobnr + ": Cost involved with " + singletransactions + " single transactions: " + singletxscosts + " Waves.")
+					console.log("    " + jobnr + ": Cost involved with " + totalmasstransfers + " masstransfers: " + masstransfercosts + " Waves.\n")
+
+					allbatchsinglecost += singletxscosts
+					allbatchmasstxcost += masstransfercosts
+
+				}
+			}
    		});	//End function addAssetInfo
 
 		if ( payjobcounter == payjobs ) {	//Reached end of payjob queue, print sum of all assets of all pending payment jobs
@@ -200,6 +263,21 @@ function checkpayouts (filename, batchid, jobnr) {
 						i++
 					}
 					console.log('\ntotal blocks: ' + blocks + '\n');
+					console.log("Total Waves transaction fee when single transactions would be used: " + allbatchsinglecost)
+					console.log("Total Waves transaction fee when masstransfers would be used: " + allbatchmasstxcost.toFixed(8) + "\n")
+
+					if ( allbatchmasstxcost < allbatchsinglecost ) {
+						console.log("It's cheapest to do the payouts with masstransfers. You save " +
+							    ((1-allbatchmasstxcost/allbatchsinglecost)*100).toFixed(1) + " percent.")
+						console.log("To do masstransfers, use tool 'node masstx.js'.\n")
+					} else if ( allbatchmasstxcost == allbatchsinglecost ) {
+						console.log("Single transactions and masstransfers incur the same cost. Choose whichever you like;")
+						console.log(" - for single transactions: 'node massPayment.js'")
+						console.log(" - for masstransfers: 'node masstx.js'\n")
+					} else {
+						console.log("Single transactions are cheapest to do the payments.")
+						console.log("To do single transactions, use tool 'node massPayment.js'\n")
+					}
 				  }
 			}, 150);
 		} 
