@@ -14,11 +14,54 @@
  *
  * Donations are welcome if you like this version of the script: 'The lazy one'
  * - you can send waves to wallet alias 'plukkie'
- * - you can send your lease to waves alias 'plukkieforger'
+ * - you can send your lease to waves alias 'plukkieforger' or 'stickypete'
  * 
  * Thank you and Enjoy!
  *
 /* =====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES===WAVES====WAVES====
+
+Version 1.2
+-----------
+- date 28 december 2018
+
+- Added masstransfer support with script 'masstx.js'
+
+  You can now choose to do payments with masstransfers, which optimizes your transfer costs for the payments.
+  Masstransfer is a type 11 transaction which can be done for one asset at once (like Waves or Mrt). It adds
+  up to 100 recipients and their fee amounts in one massive transaction. The cost depends on the total transactions
+  added, but is already benefitial if you have only a couple of transactions. The exact amount depends if you only pay
+  Waves or also Mrt and depends on the number of transactions. But no worries, if you run the payment checker
+  with the 'node checkPaymentsFile.js', you get a nice overview of the payments to do and the cost involved if
+  you were to pay with single transaction or with masstransfers.
+  You can interchangelly keep on using single transactions or mass transfers. Use payment check tool to calculate
+  for you which is cheapest.
+
+- If masstransfer is used for payments, it appends the transactionlog to the logfile of the current batch, which
+  was created earlier by the collector tool 'appng.js'
+
+  NOTE:
+  This is not the case for single transactions. Sorry for that, but my time is scarse and it seems that 9 out of
+  10 times masstransfer will be used. Maybe in future updates I'll append it also for single transactions. Anyway
+  it's only handy for reference in a later stage and not really needed.
+
+- Possibility to start masstransfers after a crash or after payment disruption is not ported for now.
+
+  With the existing single transaction tool (massPayment.js), every transaction is printed on the screen with
+  a number. After a crash, you have the option to start it, just from where it crashed. However, with masstransfers
+  you have a duration optimization. Imagine you have 128 transactions to do. If you were to pay with the single
+  transaction tool (massPayment.js), it would take 128 txs, 1 sec per txs, total 2 minutes and 8 secs.
+  If you would pay with masstransfers (masstx.js), it would take 2 masstxs, 1 sec per masstxs, totals 2 secs :-)
+  Chances of a crash at this perticular short moment is low.
+
+- checkPaymentsFile.js tool now shows costs for single transactions and for mass transfers
+
+- Files updated
+  - CHANGELOG.txt
+  - checkPaymentsFile.js
+  - README.md
+
+- Files added
+  - masstx.js
 
 Version 1.1
 -----------
