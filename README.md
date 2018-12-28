@@ -154,19 +154,24 @@ node checkPaymentsFile.js
 The script reads all all batchIDs from the payqueue.dat file and the corresponding leaser files that were constructed by the collector tool. It does only checking, nothing else. The results for all pending payments is printed on the screen.\
 The checker also calculates the cost for single transactions (payment tool massPayment.js) and the cost for masstransfers (masstx.js).
 Often the number of transactions are high enough to benefit from masstransfers, which are often cheapest :-)
-See more about both payment psossibilities in next chaper (doing the payments).
+See more about both payment psossibilities in next chapter (doing the payments).
 After checking this information, you have a good overview what tokens and the amounts are planned for payout and which transaction type is best to use!
 
 ## Doing the payments
-For the actual payout, the massPayment.js tool needs to be run. It can be started with:
+For the actual payout, you can choose the massPayment.js tool or the masstx.js tool. They can be started with:
 ```sh
-node massPayment.js
+node massPayment.js or node masstx.js
 ```
+The massPayment.js tool does a single transaction for every payment to be done.
+The masstx.js tool makes use of masstransfers and pushes multiple payments for one one and the same asset
+into one masstransfer transaction. This optimizes blockchain storage and and transaction costs.
+If you run the checker first (checkPaymentsfile.js), you'll get a nice overview which method is cheapest for
+for your payment batches. Both tools can just be used interchangelly.
 All batchIDs are sequencially read from the payment queue and the transactions are executed.\
 When a job finishes, the batchID is removed from the payqueue.dat and the three wavesleaserpayoutX.* files\
 are moved to the archival directory (paymentsDone/).
 
-NOTE\
+NOTE massPayment.js\
 If there would be a crash of the system, script or other transaction breaking interruption,\
 make note of the last succesfull transaction counter and the batchID. Then edit the massPayment.js\
 file and change these values for:
@@ -182,7 +187,7 @@ The values you can leave in or you can put it back to 0 / 0 if you like.
 We decided to use seperate tools since this allows for additional tests of the payments before the payments are actually executed.
 On the other hand, it does not provide any drawback since both scripts could also be called directly one after the other with:
 ```sh
-node appng.js && node massPayment.js or ./start_collector && node massPayment.js
+node appng.js && node masstx.js or ./start_collector && node massPayment.js
 ```
 However, it is strongly recommended to check the payments before the actual payments are done.\
 So what you could do for example, run from crontab;
