@@ -7,7 +7,7 @@ Many thanks to original version of Marc Jansen and the fork of W0utje!\
 
 Donations are welcome if you like this version of the script: 'The lazy' version
   - you can send waves to wallet alias '**plukkie**'
-  - you can lease to waves alias '**plukkieforger**'
+  - you can lease your waves to alias '**plukkieforger**' or '**stickypete**'
 
 ## Installation steps: prerequisits
 First of all, you need to install Node.js (https://nodejs.org/en/) and NPM.\
@@ -67,7 +67,7 @@ var config = {
     <SNIP>
 };
 ```
-6. EDIT file massPayment.js
+6. EDIT file **massPayment.js** and **masstx.js**
 ```sh
 var config = {
     <SNIP>,
@@ -76,10 +76,14 @@ var config = {
 };
 ```
 NOTE\
-For security reasons, remove 'rwx' worldrights from massPayment.js -> ```sh chmod o-rwx massPayment.js``` \
-Now you can jump to chapter "Running the collector sessions".
+For security reasons, remove 'rwx' worldrights from massPayment.js and masstx.js -> ```sh chmod o-rwx massPayment.js``` \
+Repeat for masstx.js. Now you can jump to chapter "Running the collector sessions".
 
-## Installation steps: users that already use previous versions of LPoSdistributer script
+## Installation steps: users that already use previous versions of Plukkies LPoSdistributer script
+Just look into the **CHANGELOG.txt** file and replace the modified files and copy the new files.
+Then don't forget to add your own values again in the modified script files if needed (checkPaymentsFile.js)
+
+## Installation steps: users that already use previous versions of LPoSdistributer script (other then plukkies version)
 If you use other version of the script, like from Marc jansen or w0utje, it's easy migration;
 
 1. Finish up all payments
