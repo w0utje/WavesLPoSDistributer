@@ -76,7 +76,7 @@ var config = {
 };
 ```
 NOTE\
-For security reasons, remove 'rwx' worldrights from massPayment.js and masstx.js -> ```sh chmod o-rwx massPayment.js``` \
+For security reasons, remove 'rwx' worldrights from massPayment.js and masstx.js -> ```chmod o-rwx massPayment.js``` \
 Repeat for masstx.js. Now you can jump to chapter "Running the collector sessions".
 
 ## Installation steps: users that already use previous versions of Plukkies LPoSdistributer script
