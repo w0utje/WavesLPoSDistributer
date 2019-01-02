@@ -78,8 +78,10 @@ if (fs.existsSync(batchinfofile)) {
    let lastblockheight = parseInt(JSON.parse(blockchainresponse.body).height) 
    
    if (paymentstopblock > lastblockheight) {
-	console.log("Current block is",lastblockheight,", will have to wait till it is greater then",paymentstopblock,"for next payment round.")
-	return;
+	let blocksleft = paymentstopblock - lastblockheight
+        console.log("\n Current blockheight is " + lastblockheight + ". Waiting to reach " + paymentstopblock + " for next payment round.")
+        console.log(" This is approximaly in ~" + Math.round((blocksleft)/60) + " hrs (" + (Math.round((blocksleft/60/24)*100))/100 + " days).\n")
+        return;
    } else { var backupbatchinfo = fs.writeFileSync(batchinfofile + ".bak",fs.readFileSync(batchinfofile)) }  //Create backup of batchdatafile
 
 } 
