@@ -13,8 +13,8 @@
  * Hope you forgers enjoy my contribution to the community.
  *
  * Donations are welcome if you like this version of the script: 'The lazy one'
- * - you can send waves to wallet alias 'plukkie'
- * - you can send your lease to waves alias 'plukkieforger' or 'stickypete'
+ * - you can donate Waves to address '3PKQKCw6DdqCvuVgKtZMhNtwzf2aTZygPu6'
+ * - you can lease to Waves alias 'plukkieforger' or 'stickypete' or address '3P7ajba4wWLXq6t1G8VaoaVqbUb1dDp8fm4'
  * 
  * Thank you and Enjoy!
  *
