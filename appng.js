@@ -4,8 +4,8 @@
  * Plukkie's edit of W0utjes's LPoSDistributor V 2.0.3
  *
  * Donations are welcome if you like this version of the script: 'The one stop edit' version
- * - you can send waves to wallet alias 'plukkie'
- * - you can LEASE your waves to alias 'plukkieforger' or 'stickypete'
+ * - you can donate Waves to address '3PKQKCw6DdqCvuVgKtZMhNtwzf2aTZygPu6'
+ * - you can LEASE your waves to alias 'plukkieforger' or 'stickypete' or address '3P7ajba4wWLXq6t1G8VaoaVqbUb1dDp8fm4'
  *
  * Please see CHANGELOG.txt for all features/changes
  * Please see README.md for complete explanation of LPoSdistributer package
@@ -408,7 +408,7 @@ var pay = function() {
 "<div class=\"container\">" +
 "  <h3>Fee's between blocks " + config.startBlockHeight + " - " + config.endBlock + ", Payout #" + config.paymentid + "</h3>" +
 "  <h4>(LPOS address: " + config.address + ")</h4>" +
-"  <h5>29-06-2017: Hi all, again a short update of the fee's earned by the wavesnode 'Plukkie'. Greetings!</h5> " +
+"  <h5>29-06-2017: Hi all, again a short update of the fee's earned by the wavesnode 'Plukkieforger'. Greetings!</h5> " +
 "  <h5>You can always contact me by <a href=\"mailto:plukkie@gmail.com\">E-mail</a></h5>" +
 "  <h5>Blocks forged: " + BlockCount + "</h5>" +
 "  <table class=\"table table-striped table-hover\">" +
