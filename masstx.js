@@ -310,9 +310,6 @@ var doPayment = function(payments, counter, batchid, nrofmasstransfers) {
 
 										updatepayqueuefile(newpayqueue,batchid)
 									}
-                                                		//if (counter < masstxs) {
-                                                		//doPayment(payments, counter, batchid);
-                                                		//} //else { updatepayqueuefile(newpayqueue,batchid) }
                                                 		}
                                         	});
 					}, timeout) //End function masstransfers
