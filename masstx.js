@@ -316,9 +316,7 @@ var doPayment = function(payments, counter, batchid, nrofmasstransfers) {
 
 									if ( masstxsdone == nrofmasstransfers ) { //Finished All masstransfers for one batch!
 
-										console.log("\nTotal masstransfercosts: " + transfercostbatch + " Waves.\n" +
-											    "\nIf you enjoy this script, gifts are welcome at alias " +
-											    "'donatewaves@plukkie'")
+										console.log("\nTotal masstransfercosts: " + transfercostbatch + " Waves.")
 
 										fs.appendFileSync(config.payoutfileprefix + batchid + ".log",
 												  "\n======= masstx payment log [" +(new Date())+ "] =======\n" + logobject +
