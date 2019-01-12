@@ -3,9 +3,9 @@
  *
  * Plukkie's edit of W0utjes's LPoSDistributor V 2.0.3
  *
- * Donations are welcome if you like this version of the script: 'The one stop edit' version
- * - you can donate Waves to address '3PKQKCw6DdqCvuVgKtZMhNtwzf2aTZygPu6'
- * - you can LEASE your waves to alias 'plukkieforger' or 'stickypete' or address '3P7ajba4wWLXq6t1G8VaoaVqbUb1dDp8fm4'
+ * Donations are welcome if you like this version of the script: 'The Lazy' version
+ * - you can DONATE Waves to alias 'donatewaves@plukkie' or address '3PKQKCw6DdqCvuVgKtZMhNtwzf2aTZygPu6'
+ * - you can LEASE your Waves to alias 'plukkieforger' or 'plukkieleasing' or address '3P7ajba4wWLXq6t1G8VaoaVqbUb1dDp8fm4'
  *
  * Please see CHANGELOG.txt for all features/changes
  * Please see README.md for complete explanation of LPoSdistributer package
