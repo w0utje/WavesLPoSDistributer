@@ -4,6 +4,10 @@
  *      - node: address of your node in the form http://<ip>:<port>
  *      - apiKey: the API key of the node that is used for distribution
  *
+ * If you like this script, donations are welcome:
+ * - you can DONATE Waves to alias 'donatewaves@plukkie' or address '3PKQKCw6DdqCvuVgKtZMhNtwzf2aTZygPu6'
+ * - you can LEASE your Waves to alias 'plukkieforger' or 'plukkieleasing' or address '3P7ajba4wWLXq6t1G8VaoaVqbUb1dDp8fm4'
+ *
  * That's it! Enjoy
  */
 
@@ -301,12 +305,16 @@ var doPayment = function(payments, counter, batchid, nrofmasstransfers) {
 
 									if ( masstxsdone == nrofmasstransfers ) { //Finished All masstransfers for one batch!
 
-										console.log("\nTotal masstransfercosts: " + transfercostbatch + " Waves.")
+										console.log("\nTotal masstransfercosts: " + transfercostbatch + " Waves.\n" +
+											    "\nIf you enjoy this script, gifts are welcome at alias " +
+											    "'donatewaves@plukkie'")
 
 										fs.appendFileSync(config.payoutfileprefix + batchid + ".log",
 												  "\n======= masstx payment log [" +(new Date())+ "] =======\n" + logobject +
 												  "\nTotal masstransfercosts: " + transfercostbatch + " Waves.\n" +
-												  "All payments done for batch " + batchid + ".\n")
+												  "All payments done for batch " + batchid + ".\n" +
+												  "\nIf you enjoy this script, gifts are welcome at alias " +
+											    	  "'donatewaves@plukkie'")
 
 										updatepayqueuefile(newpayqueue,batchid)
 									}
