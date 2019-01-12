@@ -39,6 +39,7 @@ const crashconfig = {
 var fs = require('fs');
 var request = require('request');
 var newpayqueue = []
+var jobs
 
 //This function rounds a number up to the nearest upper number
 //i.e. number is 230000, upper is 100000 -> 300000
@@ -107,6 +108,7 @@ function getnonemptybatches (batchid) {
 function getpayqueue (myfunction) {
 
 	var payqueuearray = JSON.parse(fs.readFileSync(paymentqueuefile));
+	jobs = payqueuearray.length
 	var backuppayqueue = fs.writeFileSync(paymentqueuefile+".bak",fs.readFileSync(paymentqueuefile))	//Create backup of queuefile
 	var batchpaymentarray
 	var cleanpayqueuearray = payqueuearray.filter(getnonemptybatches)	// This var is the payqueue array without zero pay jobs
@@ -144,6 +146,8 @@ function getpayqueue (myfunction) {
 
 function updatepayqueuefile (array, batchid) {
 
+	jobs-- //Count down everytime a job is done
+	
 	if ( batchpaymentarray.length == 0 ) { printline = "\nRemoved batch " + batchid + " from the payqueue and successfully updated file " + paymentqueuefile + "!\n" }
 	else { printline = "\nAll payments done for batch " + batchid + ". Removed from the payqueue and succesfully updated file " + paymentqueuefile + "!\n" }
 
@@ -165,7 +169,14 @@ function updatepayqueuefile (array, batchid) {
 		if ( batchpaymentarray.length !== 0 ) {
 			console.log("\nAppended payment masstransaction logs to " + config.payoutfileprefix + batchid + ".log for reference.") }
 
-		console.log("\n==================== batch " + batchid + " all done ====================\n")
+		console.log("\n======================= batch " + batchid + " all done =======================\n")
+	
+	  	if ( jobs == 0 ) { //Processed all jobs in the payqueue
+			console.log("Finished payments for all jobs in the payqueue. All done :-)\n")
+			console.log("     If you enjoy this script, Waves gifts are welcome\n" +
+                                    "          at wallet alias 'donatewaves@plukkie'\n\n" +
+                                    "                      Happy forging!\n")
+                }
 }
 
 /**
