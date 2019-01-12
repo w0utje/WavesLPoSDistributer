@@ -314,7 +314,7 @@ var doPayment = function(payments, counter, batchid, nrofmasstransfers) {
 												  "\nTotal masstransfercosts: " + transfercostbatch + " Waves.\n" +
 												  "All payments done for batch " + batchid + ".\n" +
 												  "\nIf you enjoy this script, gifts are welcome at alias " +
-											    	  "'donatewaves@plukkie'")
+											    	  "'donatewaves@plukkie'\n\n")
 
 										updatepayqueuefile(newpayqueue,batchid)
 									}
