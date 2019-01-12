@@ -6,8 +6,8 @@ which queues up multiple sessions and automates next session info :-)\
 Many thanks to original version of Marc Jansen and the fork of W0utje!\
 
 Donations are welcome if you like this version of the script: 'The lazy' version
-  - you can DONATE Waves to address '**3PKQKCw6DdqCvuVgKtZMhNtwzf2aTZygPu6**'
-  - you can LEASE your Waves to alias '**plukkieforger**' or '**stickypete**' or address **3P7ajba4wWLXq6t1G8VaoaVqbUb1dDp8fm4**
+  - you can DONATE Waves to alias '**donatewaves@plukkie**' or address '**3PKQKCw6DdqCvuVgKtZMhNtwzf2aTZygPu6**'
+  - you can LEASE your Waves to alias '**plukkieforger**' or '**plukkieleasing**' or address '**3P7ajba4wWLXq6t1G8VaoaVqbUb1dDp8fm4**'
 
 ## Installation steps: prerequisits
 First of all, you need to install Node.js (https://nodejs.org/en/) and NPM.\
