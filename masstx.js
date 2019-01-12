@@ -173,9 +173,12 @@ function updatepayqueuefile (array, batchid) {
 	
 	  	if ( jobs == 0 ) { //Processed all jobs in the payqueue
 			console.log("Finished payments for all jobs in the payqueue. All done :-)\n")
-			console.log("     If you enjoy this script, Waves gifts are welcome\n" +
-                                    "          at wallet alias 'donatewaves@plukkie'\n\n" +
-                                    "                      Happy forging!\n")
+			console.log("     If you enjoy this script, Waves or tokens on Waves\n +
+				    "                  are welcome at wallet alias\n" +
+				    "                     'donatewaves@plukkie'\n" +
+				    "                          or address\n" +
+				    "              '3PKQKCw6DdqCvuVgKtZMhNtwzf2aTZygPu6'\n\n" +
+                                    "                        Happy forging!\n")
                 }
 }
 
