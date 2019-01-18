@@ -21,10 +21,10 @@ To install node.js and npm, do following steps;
  - add repository: curl -sL https://deb.nodesource.com/setup_10.x | sudo bash -
  - install both packages: sudo apt-get install -y nodejs
 
-Now you can proceed with the Waves LPOS scripts installation.
+Now you can proceed with the Waves LPOS scripts installation, select the variant which applies to you.
 
 ## Installation steps: first time users
-These steps are for users that do not use older an version of the LPoSdistributer package yet.
+These steps are for users that do not use an older version of the LPoSdistributer package yet.
 1. CD into the LPoS package directory : WavesLPoSDistributer
 2. install the package independencies:
 ```sh
@@ -123,18 +123,22 @@ If you use other version of the script, like from Marc jansen or w0utje, it's ea
 You should SKIP step 3 !!!
 
 ## Running the collector sessions
-After a successful configuration of the tool, it could be started with:
+After a successful configuration of the tool, start with:
 ```sh
 node appng.js OR start_collector.sh
 ```
 NOTE0\
-If you can't start 'start_collector', check is the script has execute 'x' on it.\
+If you can't start 'start_collector', check if the script has execute 'x' on it.\
 If not add with: ```chmod u+x start_collector.sh```
 
 NOTE1\
-The script can consume a serious amount of memory and exists with errors during it's run.\
+The script can consume a serious amount of memory and exits with errors during it's run.\
 Therefore I've put 'start_collector.sh' script as starter which runs 'node appng.js' with some memory optimized settings.\
-For me it works with tweaks to 65KB of stack memory and 8GB of available RAM. So use 'start_collector.sh' if you run into problems.
+For me it works with tweaks to 65KB of stack memory and 8GB of available RAM. So use 'start_collector.sh' if you run into problems\
+and tweak to your available RAM. If it keeps on exitting, then shrink the block batchsize that are collected in one batch.\
+This way multiple smaller batchsizes will be collected and consume less memory.\
+To decrease the initial batchsize, edit file 'batchinfo.json' and set 'paystopblock' smaller (closer to 'paystartblock').
+To have all subsequent runs also changed, edit file 'appng.js' and set 'blockwindowsize' smaller.
 
 NOTE2\
 To run the collector tool every night @1 AM, edit /etc/crontab and put in following line;\
