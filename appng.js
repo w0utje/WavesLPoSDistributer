@@ -1,56 +1,39 @@
-/* =================================================================================================================
- * V 1.2	'The lazy' version
- *
- * Plukkie's edit of W0utjes's LPoSDistributor V 2.0.3
- *
- * Donations are welcome if you like this version of the script: 'The Lazy' version
- * - you can DONATE Waves to alias 'donatewaves@plukkie' or address '3PKQKCw6DdqCvuVgKtZMhNtwzf2aTZygPu6'
- * - you can LEASE your Waves to alias 'plukkieforger' or 'plukkieleasing' or address '3P7ajba4wWLXq6t1G8VaoaVqbUb1dDp8fm4'
- *
- * Please see CHANGELOG.txt for all features/changes
- * Please see README.md for complete explanation of LPoSdistributer package
- *
- * Bare minimum changes to edit:
- * - put your address here: const myleasewallet = '<Put your Leasewallet address here>';
- * - put the blockchain node and port where you access the API: const myquerynode = "http://<node ip/name:port here>";
- * - How many percentage fees do you want to share with your leasers: const feedistributionpercentage = <nr here>;
- * - How many blocks do you want to collect in every collector run: const blockwindowsize = <nr here>;
- *
- * Optional;
- * - How many MRT tokens to distribute per block: const mrtperblock = <nr here>;
- * - put here addresses that should not get fee share: var nofeearray = [ "<wallet address X>", 
- *									  "<wallet address Y>" ]
- *
- * Don't forget to set values in batchinfo.json only once! :-)
- * See README.md for explanation
- *
- * That's it!
- * Enjoy the happy (lazy) payout sessions that do the work for you!
- * ================================================================================================================= */
 
-
-// START - Put your settings here
-const myleasewallet = '<your node wallet>';	//Put here the address of the wallet that your node uses
-const myquerynode = "http://localhost:6869";	//The node and API port that you use (defaults to localhost)
-const feedistributionpercentage = 90;		//How many % do you want to share with your leasers (defaults to 90%)
-const mrtperblock = 0;				//How many MRT tokens per block do you want to share with your leasers (default 0)
-const blockwindowsize = 5000; 			//how many blockss to proces for every paymentcycle
-
-// Put here wallet addresses that will receive no fees
-// Could be wallets that award you with leases like the waves small node program
-// var nofeearray = [ "3P6CwqcnK1wyW5TLzD15n79KbAsqAjQWXYZ",       //index0
-//                    "3P9AodxBATXqFC3jtUydXv9YJ8ExAD2WXYZ" ];
-var nofeearray = [ ]; 
-// END - your settings
-
-
+const configfile = 'config.json'
 
 var request = require('sync-request');
 var fs = require('fs');
 
-// file with the batch data to start collecting. Will be updated after succesfull appng run
-var batchinfofile = "batchinfo.json";
-var payqueuefile    = "payqueue.dat";
+if (fs.existsSync(configfile)) { //configurationfile is found, let's read contents and set variables
+
+	const rawconfiguration = fs.readFileSync(configfile)
+	const jsonconfiguration = JSON.parse(rawconfiguration)
+
+	toolconfigdata = jsonconfiguration['toolbaseconfig']
+	paymentconfigdata = jsonconfiguration['paymentconfig']
+
+	//define all vars related to the payment settings
+	var myquerynode = paymentconfigdata['querynode_api']
+	var feedistributionpercentage = parseInt(paymentconfigdata['feedistributionpercentage'])
+	var mrtperblock = paymentconfigdata['mrtperblock']
+	var myleasewallet = paymentconfigdata['leasewallet']
+	var attachment = paymentconfigdata['transactionattachment']
+	var startscanblock = parseInt(paymentconfigdata['firstleaserblock'])
+	var paymentstartblock = parseInt(paymentconfigdata['paystartblock'])
+	var blockwindowsize = parseInt(paymentconfigdata['blockwindowsize'])
+	var nofeearray = paymentconfigdata['nopayoutaddresses']
+	var mailto = paymentconfigdata['mail']
+
+	//define all vars related to the tool settings
+	var batchinfofile = toolconfigdata['batchinfofile']
+	var payqueuefile = toolconfigdata['payqueuefile']
+	var payoutfilesprefix = toolconfigdata['payoutfilesprefix']
+}
+else {
+     console.log("\n Error, configuration file '" + configfile + "' missing.\n"
+		+" Please get a complete copy of the code from github. Will stop now.\n");
+     return //exit program
+}
 
 if (fs.existsSync(batchinfofile)) {
 
@@ -58,11 +41,10 @@ if (fs.existsSync(batchinfofile)) {
    var batchinfo = JSON.parse(rawbatchinfo);
   
    mybatchdata = batchinfo["batchdata"];
-   paymentstartblock = parseInt(mybatchdata["paystartblock"]);
-   paymentstopblock = parseInt(mybatchdata["paystopblock"]);
-   startscanblock = parseInt(mybatchdata["scanstartblock"]);
+   paymentstartblock = parseInt(mybatchdata["paystartblock"]); //block where to start payments
+   paymentstopblock = parseInt(mybatchdata["paystopblock"]); //block UNTIL (tot) to get payments
+   startscanblock = parseInt(mybatchdata["startscanblock"]);
    payid = parseInt(mybatchdata["paymentid"]); 
-   attachment = mybatchdata["attachment"];
 
    // Collect height of last block in waves blockchain
    let options = {
@@ -85,11 +67,29 @@ if (fs.existsSync(batchinfofile)) {
    } else { var backupbatchinfo = fs.writeFileSync(batchinfofile + ".bak",fs.readFileSync(batchinfofile)) }  //Create backup of batchdatafile
 
 } 
-else {
-     console.log();
-     console.log("Error, batchfile",batchinfofile,"missing. Will stop now.");
-     console.log();
-     return; //if the batchinfofile doesn't exist stop further processing
+else { //Did not find batchinfofile, so it's probably first collector run
+
+	payid = 1
+	paymentstopblock = startscanblock + blockwindowsize
+
+	var batchinfo = { "batchdata" : {
+				"paymentid" : payid,
+				"startscanblock" : startscanblock,
+				"paystartblock" : paymentstartblock,
+				"paystopblock" : paymentstopblock
+					}
+			}
+	
+	mybatchdata = batchinfo["batchdata"]
+
+	console.log("\n Batchfile '" + batchinfofile + "' is missing. This seems to be the first collector session." +
+		    "\n The collector will start with the following batch details:\n" +
+		    "\n  - paymentID: " + payid +
+		    "\n  - Start scanning from block: " + startscanblock +
+		    "\n  - Scan till block: " + paymentstopblock +
+		    "\n  - Blockwindowsize: " + blockwindowsize + " blocks" +
+		    "\n  - First relevant payoutblock: " + paymentstartblock + "\n" +
+		    " =============================================================================================\n");
 }
 
 var config = {
@@ -97,12 +97,12 @@ var config = {
     startBlockHeight: paymentstartblock,
     endBlock: paymentstopblock,
     distributableMrtPerBlock: mrtperblock,  //MRT distribution stopped
-    filename: 'wavesleaserpayouts', //.json added automatically
+    filename: payoutfilesprefix, //.json added automatically
     paymentid: payid,
     node: myquerynode,
     //node: 'http://nodes.wavesnodes.com',
     assetFeeId: null, //not used anymore with sponsored tx
-    feeAmount: 100000,
+    feeAmount: toolconfigdata.txbasefee,
     paymentAttachment: attachment, 
     percentageOfFeesToDistribute: feedistributionpercentage
 };
@@ -141,13 +141,9 @@ console.log("done cleaning, removed: " + cleancount);
 
 var payments = [];
 var mrt = [];
-
 var myAliases = [];
-
 var BlockCount = 0;
-
 var LastBlock = {};
-
 var myForgedBlocks = [];
 
 /**
@@ -409,7 +405,7 @@ var pay = function() {
 "  <h3>Fee's between blocks " + config.startBlockHeight + " - " + config.endBlock + ", Payout #" + config.paymentid + "</h3>" +
 "  <h4>(LPOS address: " + config.address + ")</h4>" +
 "  <h5>29-06-2017: Hi all, again a short update of the fee's earned by the wavesnode 'Plukkieforger'. Greetings!</h5> " +
-"  <h5>You can always contact me by <a href=\"mailto:plukkie@gmail.com\">E-mail</a></h5>" +
+"  <h5>You can always contact me by <a href=\"mailto:" + mailto + "\">E-mail</a></h5>" +
 "  <h5>Blocks forged: " + BlockCount + "</h5>" +
 "  <table class=\"table table-striped table-hover\">" +
 "    <thead> " +
@@ -479,7 +475,7 @@ var pay = function() {
 "</body>" +
 "</html>";
 
-    console.log("total Waves fees: " + (totalfees/100000000) + " total MRT: " + totalMRT );
+    console.log("total Waves fees: " + (totalfees/100000000) + " (" + paymentconfigdata.feedistributionpercentage + "%) total MRT: " + totalMRT );
     var paymentfile = config.filename + config.paymentid + ".json";
     var htmlfile = config.filename + config.paymentid + ".html";
 
@@ -502,7 +498,8 @@ var pay = function() {
     });
    
     // Create logfile with paymentinfo for reference and troubleshooting 
-    fs.writeFile(config.filename + config.paymentid + ".log", "total Waves fees: " + (totalfees/100000000) + " total MRT: " + totalMRT + "\n"
+    fs.writeFile(config.filename + config.paymentid + ".log",
+	"total Waves fees: " + (totalfees/100000000) + " (" + paymentconfigdata.feedistributionpercentage + "%) total MRT: " + totalMRT + "\n"
 	+ "Total blocks forged: " + BlockCount + "\n"
 	+ "Payment ID of batch session: " + config.paymentid + "\n"
 	+ "Payment startblock: " + paymentstartblock + "\n"
@@ -549,12 +546,14 @@ var pay = function() {
 
          if ( fs.existsSync(payqueuefile) == false ) {  //There is no paymentqueue file!
 
-                console.log("\nApparently there's no paymentqueue file yet. Adding paymentid '" + payid + "' of current batch to queuefile " + payqueuefile);
+		console.log("\nApparently there's no payment queue file yet. Adding paymentid '" + payid + "' of current batch to queuefile " + payqueuefile);
 		console.log("You can now either start the next collector session, when finished it will automatically be added to the payment queue.");
-		console.log("You can also verify the payment queue with the payment check tool (checkPayment.js). All pending payments are");
-		console.log("automatically found and checked.");
-		console.log("Or you can run the payment tool (masspayment.js), which automatically executes the transactions to all leasers for all");
-		console.log("jobs in the payment queue. Whenever a job is finished, it is automatically removed from the payment queue file.\n");
+                console.log("\nYou can now verify the payment queue with the payment check tool ('start_checker' or 'node checkPayment.js').");
+                console.log("All pending payments are automatically found and checked. It tells you which payment tool has lowest tx-cost.");
+                console.log("This will be the masstransfer tool (masstx.js) for bundled sub-transactions or the massPayment.js for single transactions.");
+                console.log("Probably masstx.js will be most cost efficient. Just run the checker tool and you'll see.\n");
+		console.log("Then execute the actual payments, which transfers the revenue shares to all leasers for all jobs in the")
+		console.log("payment queue. Whenever a job is finished, it is automatically removed from the payment queue file.\n")
 
                 payarray = [ payid ];
 
@@ -569,11 +568,12 @@ var pay = function() {
                 if ( payarray.length == 0 ) {
                         console.log("\nCurrently there are no payments pending in the queue.");
                         console.log("Adding paymentid '" + payid + "' to queuefile " + payqueuefile + ". This is the only payment in the queue now :-)\n");
-			console.log("You can now either start the next collector session, when finished it will automatically be added to the payment queue.");
-			console.log("You can also verify the payment queue with the payment check tool (checkPayment.js). All pending payments are");
-			console.log("automatically found and checked.");
-			console.log("Or you can run the payment tool (masspayment.js), which automatically executes the transactions to all leasers for all");
-			console.log("jobs in the payment queue. Whenever a job is finished, it is automatically removed from the payment queue file.\n");
+                        console.log("You can now either start the next collector session, when finished it will automatically be added to the payment queue.");
+                        console.log("\nOr you can verify the payment queue with the payment check tool (checkPayment.js). All pending payments are");
+                        console.log("automatically found and checked. It tells you which payment tool has lowest tx-cost.");
+			console.log("Probably masstx.js will be most cost efficient. Just run the checker tool and you'll see.\n");
+                	console.log("Then execute the actual payments, which transfers the revenue shares to all leasers for all jobs in the")
+                	console.log("payment queue. Whenever a job is finished, it is automatically removed from the payment queue file.\n")
  
                         payarray = [ payid ]
                 }
@@ -582,10 +582,11 @@ var pay = function() {
 
                         console.log("\nWARNING! Found paymentid " + payid + " already in queue. This means there has already ran a batch with this id,\n"
                                    +"for which payments were not done yet. If you expect this because you used the old batchinfo file again, then it's fine.\n"
-                                   +"The paymentqueue stays the same and has following payments waiting [" + payarray + "]. The batchinfo that was used in current run is:\n");
-                        console.log(mybatchdata);
-	                console.log("\nYou can verify the actual payments that will be done in a dry run first by starting the checkPaymentsFile.js script.");
-                        console.log("\nHowever, if you weren't expecting a job with same paymentid in the queue (which normally shouldn't), then check logs!!!\n");
+				   +"However, if you weren't expecting a job with same paymentid in the queue (which normally shouldn't), then check logs!!!\n"
+                                   +"The paymentqueue stays the same and has following payments waiting: [" + payarray + "].\n"
+				   +"\nThe batchinfo that was used in the current run is:\n")
+			console.log(mybatchdata)
+			console.log("\nYou can verify the actual payments that will be done in a dry run first by starting the checkPaymentsFile.js script.\n")
                 }
                 //case 3. It's not empty. Add current batch to queue
                 else {
@@ -614,6 +615,7 @@ var pay = function() {
 	mybatchdata["paymentid"] = (payid + 1).toString()
 	mybatchdata["paystartblock"] = (paymentstopblock).toString()
 	mybatchdata["paystopblock"] = (paymentstopblock + blockwindowsize).toString()
+	mybatchdata["startscanblock"] = startscanblock.toString()
 	
 	fs.writeFile(batchinfofile, JSON.stringify(batchinfo), (err) => {
 		if (err) {
