@@ -1,17 +1,38 @@
-/**
- * Put your mandatory setting here:
- *     - node: address of your node in the form http://<ip>:<port
- */
 
-var config = {
-    payoutfileprefix: 'wavesleaserpayouts',
-    node: 'http://localhost:6869',	//Change this value to your blockchain node
-    paymentqueuefile: 'payqueue.dat'
-};
-
+var os = require('os');
 var fs = require('fs');
 var request = require('request');
-var os = require('os');
+
+const configfile = 'config.json'
+
+if (fs.existsSync(configfile)) { //configurationfile is found, let's read contents and set variables
+
+        const rawconfiguration = fs.readFileSync(configfile)
+        const jsonconfiguration = JSON.parse(rawconfiguration)
+
+        toolconfigdata = jsonconfiguration['toolbaseconfig']
+        paymentconfigdata = jsonconfiguration['paymentconfig']
+
+        //define all vars related to the payment settings
+        var myquerynode = paymentconfigdata['querynode_api']
+        var mailto = paymentconfigdata['mail']
+
+        //define all vars related to the tool settings
+        var batchinfofile = toolconfigdata['batchinfofile']
+        var payqueuefile = toolconfigdata['payqueuefile']
+        var payoutfilesprefix = toolconfigdata['payoutfilesprefix']
+}
+else {
+     console.log("\n Error, configuration file '" + configfile + "' missing.\n"
+                +" Please get a complete copy of the code from github. Will stop now.\n");
+     return //exit program
+}
+
+var config = {
+    payoutfileprefix: payoutfilesprefix,
+    node: myquerynode,
+    paymentqueuefile: payqueuefile
+};
 
 var payments;
 var payjobs;
@@ -21,9 +42,9 @@ var assetamount = 0;
 var allbatchsinglecost = 0
 var allbatchmasstxcost = 0
 
-const transferfee = 100000
-const masstransferfee = 50000
-const maxmasstransfertxs = 100 //Maximum nr of transactions that fit in 1 masstransfer
+const transferfee = parseInt(toolconfigdata.txbasefee) //basefee for a transaction
+const masstransferfee = parseInt(toolconfigdata.masstransferpertxfee) //Additional fee for every recipient in a masstransfer (N*x)
+const maxmasstransfertxs = parseInt(toolconfigdata.maxmasstransfertxs) //Maximum nr of transactions that fit in 1 masstransfer
 
 //This function rounds a number up to the nearest upper number
 //i.e. number is 230000, upper is 100000 -> 300000
@@ -160,7 +181,6 @@ function checkpayouts (filename, batchid, jobnr) {
 			addmessage = payments.length + ' payments. ' + getblocksforged()
 		  }
 
-		
 		/**
  		* Method that adds infor like decimals and name to an asset.
  		*
@@ -171,6 +191,7 @@ function checkpayouts (filename, batchid, jobnr) {
     			var counter = 0;
 
     			for (var assetId in assets) {
+
         			if (assetId !== 'Waves') {
             				request.get(config.node + '/transactions/info/' + assetId, function(err, response, body) {
                					if (!err) {
@@ -180,15 +201,18 @@ function checkpayouts (filename, batchid, jobnr) {
                						assets[asset.assetId].decimals = asset.decimals;
                						assets[asset.assetId].name = asset.name;
 
-               						if (assetsFound - 1 === counter) {
+               						if (assetsFound === counter) {
                        						cb();
                	 					}
                					}
             				});
-        			}
+        			} else {
+					counter++
+				}
+				if (assetsFound === counter) { cb() } //assetsFound is 'Waves + tokens'
     			} //End for
 		}; //End var addAssetInfo
-		
+
 		console.log(message + addmessage);
 
 		addAssetInfo(assets, function() {	//assets is the array filled with the total amounts for all assetIds
@@ -203,6 +227,7 @@ function checkpayouts (filename, batchid, jobnr) {
 			for (var assetId in assets) {	//For every asset found in one batch
 
        				var asset = assets[assetId];
+
 				singletransactions += asset.transactions //increase transactioncounter for single transactions
 				masstransfers = Math.ceil(asset.transactions/maxmasstransfertxs) //how many masstransfers for one asset
 				
