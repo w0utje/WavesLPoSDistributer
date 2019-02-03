@@ -19,6 +19,38 @@
  * Thank you and Enjoy!
  *
 /* =====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES===WAVES====WAVES====
+Version 2.0
+-----------
+- date 01 februari 2019
+
+- Please refer to README.md which necessary steps to take to get you up and running.
+  It will take you about 1 hour to set parameters and get you started!
+
+- Added centralized configuration file 'config.json'
+  Now you only have to change values once if you want to change behaviour.
+  See README.md for a description of all variables.
+  All script files consume these values when started by reading this file.
+
+- If the collector script starts for the first time and hence, it does not find the file 'batchinfo.json',
+  then it uses the blockvalues that you configured in the config.json file.
+  After the first run, the batchinfo.json file is created and periodically updated and used for subsequent runs.
+
+- added bash script 'start_checker.sh' as simplified starter for your 'node checkPaymentsFile.js'
+  The script will just execute 'node checkPaymentsFile.js' for you. That's why this is the 'lazy' version
+
+- changed README.md file accordingly and optimized some text
+
+- Files updated
+  - appng.js
+  - checkPaymentsFile.js
+  - massPayment.js
+  - masstx.js
+  - CHANGELOG.txt
+  - README.md
+
+- Files added
+  - config.json
+  - start_checker.sh
 
 Version 1.2
 -----------
