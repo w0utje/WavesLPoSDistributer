@@ -1,20 +1,41 @@
-/**
- *  Put your settings here, bare minimum:
- *      - node: address of your node in the form http://<ip>:<port>
- *      - apiKey: the API key of the node that is used for distribution
- *
- * That's it! Enjoy
- */
+
+var fs = require('fs');
+var request = require('request');
+
+const configfile = 'config.json'
+
+if (fs.existsSync(configfile)) { //configurationfile is found, let's read contents and set variables
+
+        const rawconfiguration = fs.readFileSync(configfile)
+        const jsonconfiguration = JSON.parse(rawconfiguration)
+
+        toolconfigdata = jsonconfiguration['toolbaseconfig']
+        paymentconfigdata = jsonconfiguration['paymentconfig']
+
+        //define all vars related to the payment settings
+        var myquerynode = paymentconfigdata['querynode_api']
+        var mailto = paymentconfigdata['mail']
+
+        //define all vars related to the tool settings
+        var batchinfofile = toolconfigdata['batchinfofile']
+        var payqueuefile = toolconfigdata['payqueuefile']
+        var payoutfilesprefix = toolconfigdata['payoutfilesprefix']
+}
+else {
+     console.log("\n Error, configuration file '" + configfile + "' missing.\n"
+                +" Please get a complete copy of the code from github. Will stop now.\n");
+     return //exit program
+}
 
 var config = {
-    payoutfileprefix: 'wavesleaserpayouts',
-    node: 'http://localhost:6869',
-    apiKey: 'your api key'
+    payoutfileprefix: payoutfilesprefix,
+    node: myquerynode,
+    apiKey: paymentconfigdata.querynodeapikey
 };
 
-const paymentqueuefile = 'payqueue.dat'
-const transactiontimeout = 1000
-const paymentsdonedir = 'paymentsDone/'
+const paymentqueuefile = payqueuefile //Queue file with all payment ids to be processed
+const transactiontimeout = parseInt(toolconfigdata.transactiontimeout) //msec to wait after a transaction
+const paymentsdonedir = toolconfigdata.paymentsdonedir //Where to move files after processing
 
 
 // THIS CONST VALUE IS NEEDED WHEN THE PAYMENT PROCESS HALTS OR CRASHES
@@ -26,8 +47,6 @@ const crashconfig = {
 	batchidstart: '0',
 	transactionstart: '0' }
 
-var fs = require('fs');
-var request = require('request');
 var newpayqueue = []
 
 /*
@@ -86,7 +105,6 @@ function getpayqueue (myfunction) {
 	var transactiondelay = 0
 	var timeoutarray = [];
 	timeoutarray[0] = 0;
-
 
 	cleanpayqueuearray.forEach ( function ( batchid, index ) {  //remark: index in array starts at 0!
 
@@ -152,7 +170,7 @@ var doPayment = function(payments, counter, batchid) {
 	else { assetname = payment.assetId }
 
 	setTimeout(function() {
-		request.post({  url: config.node + '/assets/transfer',
+		request.post({  url: config.node + toolconfigdata.transactionapisuffix,
 				json: payment,
 				headers: { "Accept": "application/json", "Content-Type": "application/json", "api_key": config.apiKey }
 			     }, function(err) {
