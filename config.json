@@ -1,0 +1,29 @@
+{
+	"paymentconfig" : {
+		"querynode_api" : "http://localhost:6869",
+		"querynodeapikey" : "<<your api key here>>",
+		"feedistributionpercentage" : "90",
+		"mrtperblock" : "5",
+		"leasewallet" : "<<your leasewallet here>>",
+		"transactionattachment" : "NK2oQJzq7sjCvh7AjJcLjLT9Ax",
+		"firstleaserblock" : "1370000",
+		"paystartblock" : "1370000",
+		"blockwindowsize" : "20160",
+		"nopayoutaddresses" : [ ],
+		"mail" : "<<your email address>>"
+	},
+	"toolbaseconfig" : {
+		"batchinfofile" : "batchinfo.json",
+		"payqueuefile" : "payqueue.dat",
+		"payoutfilesprefix" : "wavesleaserpayouts",
+		"paymentsdonedir" : "paymentsDone/",
+		"txbasefee" : "100000",
+		"masstransferpertxfee" : "50000",
+		"maxmasstransfertxs" : "100",
+		"transactiontimeout" : "1000",
+		"transactionapisuffix" : "/assets/transfer",
+		"masstxapisuffix" : "/assets/masstransfer",
+		"masstransferversion" : "1",
+		"relevantassets" : [ "Waves", "Mrt" ]
+	}
+}
