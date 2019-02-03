@@ -1,30 +1,46 @@
 
-/**
- *  Put your settings here, bare minimum:
- *      - node: address of your node in the form http://<ip>:<port>
- *      - apiKey: the API key of the node that is used for distribution
- *
- * If you like this script, donations are welcome:
- * - you can DONATE Waves to alias 'donatewaves@plukkie' or address '3PKQKCw6DdqCvuVgKtZMhNtwzf2aTZygPu6'
- * - you can LEASE your Waves to alias 'plukkieforger' or 'plukkieleasing' or address '3P7ajba4wWLXq6t1G8VaoaVqbUb1dDp8fm4'
- *
- * That's it! Enjoy
- */
+var fs = require('fs');
+var request = require('request');
+
+const configfile = 'config.json'
+
+if (fs.existsSync(configfile)) { //configurationfile is found, let's read contents and set variables
+
+        const rawconfiguration = fs.readFileSync(configfile)
+        const jsonconfiguration = JSON.parse(rawconfiguration)
+
+        toolconfigdata = jsonconfiguration['toolbaseconfig']
+        paymentconfigdata = jsonconfiguration['paymentconfig']
+
+        //define all vars related to the payment settings
+        var myquerynode = paymentconfigdata['querynode_api']
+        var mailto = paymentconfigdata['mail']
+
+        //define all vars related to the tool settings
+        var batchinfofile = toolconfigdata['batchinfofile']
+        var payqueuefile = toolconfigdata['payqueuefile']
+        var payoutfilesprefix = toolconfigdata['payoutfilesprefix']
+}
+else {
+     console.log("\n Error, configuration file '" + configfile + "' missing.\n"
+                +" Please get a complete copy of the code from github. Will stop now.\n");
+     return //exit program
+}
 
 var config = {
-    payoutfileprefix: 'wavesleaserpayouts',
-    node: 'http://localhost:6869',
-    apiKey: 'your api key here please!!'
+    payoutfileprefix: payoutfilesprefix,
+    node: myquerynode,
+    apiKey: paymentconfigdata.querynodeapikey
 };
 
-const paymentqueuefile = 'payqueue.dat'
-const transactiontimeout = 1500 //Msecs to wait between every transaction posted
-const paymentsdonedir = 'paymentsDone/'
-const maxmasstransfertxs = 100 //Maximum nr of transactions that fit in 1 masstransfer
-const coins = [ "Waves", "Mrt" ] //Which coins we take into consideration for masstransfers
-const transferfee = 100000
-const masstransferfee = 50000
-const masstransferversion = 1
+const paymentqueuefile = payqueuefile //Queue file with all payment ids to be processed
+const transactiontimeout = parseInt(toolconfigdata.transactiontimeout) //Msecs to wait between every transaction posted
+const paymentsdonedir = toolconfigdata.paymentsdonedir //Where to move files after processing
+const maxmasstransfertxs = parseInt(toolconfigdata.maxmasstransfertxs) //Maximum nr of transactions that fit in 1 masstransfer
+const coins = toolconfigdata.relevantassets //Which coins we take into consideration for masstransfers
+const transferfee = parseInt(toolconfigdata.txbasefee)
+const masstransferfee = parseInt(toolconfigdata.masstransferpertxfee)
+const masstransferversion = parseInt(toolconfigdata.masstransferversion)
 
 
 // THIS CONST VALUE IS NEEDED WHEN THE PAYMENT PROCESS HALTS OR CRASHES
@@ -36,8 +52,6 @@ const crashconfig = {
 	batchidstart: '0',
 	transactionstart: '0' }
 
-var fs = require('fs');
-var request = require('request');
 var newpayqueue = []
 var jobs
 
@@ -295,7 +309,7 @@ var doPayment = function(payments, counter, batchid, nrofmasstransfers) {
 						if ( masstransfers == 1 ) { timeout = 0 } else { timeout = transactiontimeout }
 
 						//Put here the actual POST function for a masstransfer
-        	                                request.post({ url: config.node + '/assets/masstransfer',
+        	                                request.post({ url: config.node + toolconfigdata.masstxapisuffix,
 								json: masstransactionpayment,
                         	                        	headers: { "Accept": "application/json", "Content-Type": "application/json", "api_key": config.apiKey }
                                         		     }, function(err) {
