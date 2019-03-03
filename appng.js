@@ -102,7 +102,7 @@ var config = {
     node: myquerynode,
     //node: 'http://nodes.wavesnodes.com',
     assetFeeId: null, //not used anymore with sponsored tx
-    feeAmount: toolconfigdata.txbasefee,
+    feeAmount: parseInt(toolconfigdata.txbasefee),
     paymentAttachment: attachment, 
     percentageOfFeesToDistribute: feedistributionpercentage
 };
