@@ -51,16 +51,16 @@ npm install
 {
   "paymentconfig" : {
     "querynode_api" : "http://localhost:6869",
-    "querynodeapikey" : "<<your api key here>>",      <-- mandatory value
+    "querynodeapikey" : "<<your api key here>>",      <-- mandatory value (also remove << and >> chars) 
     "feedistributionpercentage" : "90",
     "mrtperblock" : "5",
-    "leasewallet" : "<<your leasewallet here>>",      <-- mandatory value
+    "leasewallet" : "<<your leasewallet here>>",      <-- mandatory value (also remove << and >> chars)
     "transactionattachment" : "NK2oQJzq7sjCvh7AjJcLjLT9Ax",
     "firstleaserblock" : "1370000",
     "paystartblock" : "1370000",
     "blockwindowsize" : "20160",
     "nopayoutaddresses" : [ ],
-    "mail" : "<<your email address>>"                 <-- optional value
+    "mail" : "<<your email address>>"                 <-- optional value (also remove << and >> chars)
   },
   "toolbaseconfig" : {
     "batchinfofile" : "batchinfo.json",
@@ -80,6 +80,7 @@ npm install
 ```
 The values marked with statement "<-- mandatory" need to be filled out,
 so almost all values can be left untouched as you can see, only 2 to be changed.
+Make sure you remove the << and >> characters of the value fields!
 
 Here's a clarification of all key/value pairs;
 
