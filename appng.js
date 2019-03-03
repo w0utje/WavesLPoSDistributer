@@ -569,7 +569,7 @@ var pay = function() {
                         console.log("\nCurrently there are no payments pending in the queue.");
                         console.log("Adding paymentid '" + payid + "' to queuefile " + payqueuefile + ". This is the only payment in the queue now :-)\n");
                         console.log("You can now either start the next collector session, when finished it will automatically be added to the payment queue.");
-                        console.log("\nOr you can verify the payment queue with the payment check tool (checkPayment.js). All pending payments are");
+                        console.log("\nOr you can verify the payment queue with the payment check tool (node checkPaymentsFile.js). All pending payments are");
                         console.log("automatically found and checked. It tells you which payment tool has lowest tx-cost.");
 			console.log("Probably masstx.js will be most cost efficient. Just run the checker tool and you'll see.\n");
                 	console.log("Then execute the actual payments, which transfers the revenue shares to all leasers for all jobs in the")
