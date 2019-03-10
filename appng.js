@@ -475,7 +475,7 @@ var pay = function() {
 "</body>" +
 "</html>";
 
-    console.log("total Waves fees: " + (totalfees/100000000) + " (" + paymentconfigdata.feedistributionpercentage + "%) total MRT: " + totalMRT );
+    console.log("total Waves fees: " + (totalfees/100000000).toFixed(8) + " (" + paymentconfigdata.feedistributionpercentage + "%) total MRT: " + totalMRT );
     var paymentfile = config.filename + config.paymentid + ".json";
     var htmlfile = config.filename + config.paymentid + ".html";
 
@@ -499,7 +499,7 @@ var pay = function() {
    
     // Create logfile with paymentinfo for reference and troubleshooting 
     fs.writeFile(config.filename + config.paymentid + ".log",
-	"total Waves fees: " + (totalfees/100000000) + " (" + paymentconfigdata.feedistributionpercentage + "%) total MRT: " + totalMRT + "\n"
+	"total Waves fees: " + (totalfees/100000000).toFixed(8) + " (" + paymentconfigdata.feedistributionpercentage + "%) total MRT: " + totalMRT + "\n"
 	+ "Total blocks forged: " + BlockCount + "\n"
 	+ "Payment ID of batch session: " + config.paymentid + "\n"
 	+ "Payment startblock: " + paymentstartblock + "\n"
