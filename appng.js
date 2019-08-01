@@ -1,62 +1,122 @@
+
+const configfile = 'config.json'
+
 var request = require('sync-request');
 var fs = require('fs');
 
-/**
- * V 2.0.3
- * w0utje's edit of Hawky's LPoSDistributor
- * added mercury and ripto bux fee calculation
- * added (cancelled) leases infomation to be re-used next payout
- * added HTML payout overview generation
- * added feeAssetId to the payments for sending payments with a custom assetFee
- * Removed 0.003 Waves Fee substraction, because of the custom assetFee adding
- * if you don't want to use an assetFee, remember that you'll need to substract the waves fee for each transaction.
- * Asset fee's that aren't dividable (since there aren't any decimals left)
- * could cause strange asset fee splitting (no 60-40).
- * mercury and ripto bux both have 8 decimals and are sent with 1 decimal, so there's plenty of space to divide those assets.
- * keep this in mind when adding your own asset fee's
- * Added, sponsored fees and aliases
- *
- *
- * Put your settings here:
- *     - address: the address of your node that you want to distribute from
- *     - startBlockHeight: the block from which you want to start distribution for
- *     - endBlock: the block until you want to distribute the earnings
- *     - distributableMRTPerBlock: amount of MRT distributed per forged block
- *     - filename: file to which the payments for the mass payment tool are written
- *     - paymentid: used to create payment and html file with this id.
- *     - node: address of your node in the form http://<ip>:<port
- *     - assetFeeId: AssetID used as fee for payments, empty or null for using waves
- *     - feeAmount: fee amount counted from decimals. example: asset with 2 decimals. fee=1 => 0.01
- *     - paymentAttachment: attachment used for payments (base58 encoded)
- *     - percentageOfFeesToDistribute: the percentage of Waves fees that you want to distribute
- */
+if (fs.existsSync(configfile)) { //configurationfile is found, let's read contents and set variables
+
+	const rawconfiguration = fs.readFileSync(configfile)
+	const jsonconfiguration = JSON.parse(rawconfiguration)
+
+	toolconfigdata = jsonconfiguration['toolbaseconfig']
+	paymentconfigdata = jsonconfiguration['paymentconfig']
+
+	//define all vars related to the payment settings
+	var myquerynode = paymentconfigdata['querynode_api']
+	var feedistributionpercentage = parseInt(paymentconfigdata['feedistributionpercentage'])
+	var mrtperblock = paymentconfigdata['mrtperblock']
+	var myleasewallet = paymentconfigdata['leasewallet']
+	var attachment = paymentconfigdata['transactionattachment']
+	var startscanblock = parseInt(paymentconfigdata['firstleaserblock'])
+	var paymentstartblock = parseInt(paymentconfigdata['paystartblock'])
+	var blockwindowsize = parseInt(paymentconfigdata['blockwindowsize'])
+	var nofeearray = paymentconfigdata['nopayoutaddresses']
+	var mailto = paymentconfigdata['mail']
+
+	//define all vars related to the tool settings
+	var batchinfofile = toolconfigdata['batchinfofile']
+	var payqueuefile = toolconfigdata['payqueuefile']
+	var payoutfilesprefix = toolconfigdata['payoutfilesprefix']
+}
+else {
+     console.log("\n Error, configuration file '" + configfile + "' missing.\n"
+		+" Please get a complete copy of the code from github. Will stop now.\n");
+     return //exit program
+}
+
+if (fs.existsSync(batchinfofile)) {
+
+   var rawbatchinfo = fs.readFileSync(batchinfofile);
+   var batchinfo = JSON.parse(rawbatchinfo);
+  
+   mybatchdata = batchinfo["batchdata"];
+   paymentstartblock = parseInt(mybatchdata["paystartblock"]); //block where to start payments
+   paymentstopblock = parseInt(mybatchdata["paystopblock"]); //block UNTIL (tot) to get payments
+   startscanblock = parseInt(mybatchdata["startscanblock"]);
+   payid = parseInt(mybatchdata["paymentid"]); 
+
+   // Collect height of last block in waves blockchain
+   let options = {
+	uri: "/blocks/height",
+	baseUrl: myquerynode,
+	method: "GET",
+	headers: {
+	json: true
+	}
+   };
+   
+   let blockchainresponse = request(options.method, options.baseUrl + options.uri, options.headers)
+   let lastblockheight = parseInt(JSON.parse(blockchainresponse.body).height) 
+   
+   if (paymentstopblock > lastblockheight) {
+	let blocksleft = paymentstopblock - lastblockheight
+        console.log("\n Current blockheight is " + lastblockheight + ". Waiting to reach " + paymentstopblock + " for next payment round.")
+        console.log(" This is approximaly in ~" + Math.round((blocksleft)/60) + " hrs (" + (Math.round((blocksleft/60/24)*100))/100 + " days).\n")
+        return;
+   } else { var backupbatchinfo = fs.writeFileSync(batchinfofile + ".bak",fs.readFileSync(batchinfofile)) }  //Create backup of batchdatafile
+
+} 
+else { //Did not find batchinfofile, so it's probably first collector run
+
+	payid = 1
+	paymentstopblock = startscanblock + blockwindowsize
+
+	var batchinfo = { "batchdata" : {
+				"paymentid" : payid,
+				"startscanblock" : startscanblock,
+				"paystartblock" : paymentstartblock,
+				"paystopblock" : paymentstopblock
+					}
+			}
+	
+	mybatchdata = batchinfo["batchdata"]
+
+	console.log("\n Batchfile '" + batchinfofile + "' is missing. This seems to be the first collector session." +
+		    "\n The collector will start with the following batch details:\n" +
+		    "\n  - paymentID: " + payid +
+		    "\n  - Start scanning from block: " + startscanblock +
+		    "\n  - Scan till block: " + paymentstopblock +
+		    "\n  - Blockwindowsize: " + blockwindowsize + " blocks" +
+		    "\n  - First relevant payoutblock: " + paymentstartblock + "\n" +
+		    " =============================================================================================\n");
+}
+
 var config = {
-    address: '3PEFQiFMLm1gTVjPdfCErG8mTHRcH2ATaWa',
-    startBlockHeight: 1150070,
-    endBlock: 1160406,
-    distributableMrtPerBlock: 0,  //MRT distribution stopped
-    filename: 'payment', //.json added automatically
-    paymentid: "xx",
-    node: 'http://127.0.0.1:6869',
+    address: myleasewallet,
+    startBlockHeight: paymentstartblock,
+    endBlock: paymentstopblock,
+    distributableMrtPerBlock: mrtperblock,  //MRT distribution stopped
+    filename: payoutfilesprefix, //.json added automatically
+    paymentid: payid,
+    node: myquerynode,
     //node: 'http://nodes.wavesnodes.com',
     assetFeeId: null, //not used anymore with sponsored tx
-    feeAmount: 1,
-    paymentAttachment: "DVCsMf2Av2pvvM8GNzzP1tQKZtd4jWfcHJQj9bky32RR6janfLK2", //thank you for leasing to bearwaves...
-    percentageOfFeesToDistribute: 100
+    feeAmount: parseInt(toolconfigdata.txbasefee),
+    paymentAttachment: attachment, 
+    percentageOfFeesToDistribute: feedistributionpercentage
 };
-
 
 var myLeases = {};
 var myCanceledLeases = {};
 
-var currentStartBlock = 462000;
-
+var currentStartBlock = startscanblock;
 
 var fs=require('fs');
 var prevleaseinfofile = config.startBlockHeight + "_" + config.address + ".json";
 if (fs.existsSync(prevleaseinfofile))
 {
-	console.log("reading" + prevleaseinfofile + " file");
+	console.log("reading " + prevleaseinfofile + " file");
 	var data=fs.readFileSync(prevleaseinfofile);
 	var prevleaseinfo=JSON.parse(data);
 	myLeases = prevleaseinfo["leases"];
@@ -81,15 +141,9 @@ console.log("done cleaning, removed: " + cleancount);
 
 var payments = [];
 var mrt = [];
-var merfees=[];
-var rbxfees=[];
-
 var myAliases = [];
-
 var BlockCount = 0;
-
 var LastBlock = {};
-
 var myForgedBlocks = [];
 
 /**
@@ -136,8 +190,6 @@ var prepareDataStructure = function(blocks) {
     var checkprevblock = false;
 	var myblock = false;
         var wavesFees = 0;
-        var merFees = 0;
-        var rbxFees = 0;
 
         if (block.generator === config.address)
         {
@@ -146,8 +198,6 @@ var prepareDataStructure = function(blocks) {
 			myblock = true;
 		}
 		var blockwavesfees=0;
-		var blockmerfees=0;
-		var blockrbxfees=0;
 
         block.transactions.forEach(function(transaction)
         {
@@ -175,27 +225,13 @@ var prepareDataStructure = function(blocks) {
                     }
                 } else if (block.height > 1090000 && transaction.type === 4) {
                 blockwavesfees += 100000;
-								}
+		  }
 
-                /*
-                if (transaction.feeAsset === 'HzfaJp8YQWLvQG4FkUxq2Q7iYWMYQ2k8UF89vVJAjWPj') {     //Mercury
-                    //merFees += (transaction.fee*0.4);
-                    blockmerfees += transaction.fee;
-                }
-                if (transaction.feeAsset === 'AnERqFRffNVrCbviXbDEdzrU6ipXCP5Y1PKpFdRnyQAy') {     //Ripto Bux
-                    //rbxFees += (transaction.fee*0.4);
-                    blockrbxfees += transaction.fee;
-                }
-                */
 			}
       });
       wavesFees += Math.round(parseInt(blockwavesfees / 5) * 2);
-      merFees += Math.round(parseInt(blockmerfees / 5) * 2);
-      rbxFees += Math.round(parseInt(blockrbxfees / 5) * 2);
 
       blockwavesfees=0;
-      blockmerfees=0;
-      blockrbxfees=0;
 
       if(checkprevblock)
       {
@@ -216,30 +252,16 @@ var prepareDataStructure = function(blocks) {
   		        }
             } else if (block.height > 1090000 && transaction.type === 4) {
                 blockwavesfees += 100000;
-								}
+	      }
 
-              /*
-              if (transaction.feeAsset === 'HzfaJp8YQWLvQG4FkUxq2Q7iYWMYQ2k8UF89vVJAjWPj') {     //Mercury
-                  //merFees += (transaction.fee*0.6);
-                  blockmerfees += transaction.fee;
-              }
-              if (transaction.feeAsset === 'AnERqFRffNVrCbviXbDEdzrU6ipXCP5Y1PKpFdRnyQAy') {     //Ripto Bux
-                  //rbxFees += (transaction.fee*0.6);
-                  blockrbxfees += transaction.fee;
-              }
-              */
             });
         }
 
       wavesFees += (blockwavesfees - Math.round(parseInt(blockwavesfees / 5) * 2));
-      merFees += (blockmerfees - Math.round(parseInt(blockmerfees / 5) * 2));
-      rbxFees += (blockrbxfees - Math.round(parseInt(blockrbxfees / 5) * 2));
 
       }
 
         block.wavesFees = wavesFees;
-        block.merFees = merFees;
-        block.rbxFees = rbxFees;
 
     });
 };
@@ -322,36 +344,39 @@ var getAllAlias = function() {
  * @param block the block to consider
  */
 var distribute = function(activeLeases, amountTotalLeased, block) {
+
     var fee = block.wavesFees;
-    var merfee = block.merFees;
-    var rbxfee = block.rbxFees;
 
     for (var address in activeLeases) {
-        var share = (activeLeases[address] / amountTotalLeased)
+
+	if ( nofeearray.indexOf(address) == -1 ) {	// leaseaddress is not marked as 'no pay address'
+		var share = (activeLeases[address] / amountTotalLeased);
+		var payout = true;
+	} else {
+		var share = (activeLeases[address] / amountTotalLeased);
+		var payout = false;
+	  }
+
         var amount = fee * share;
-        var meramount = merfee * share;
-        var rbxamount = rbxfee * share;
 
         var assetamounts = [];
 
 
         var amountMRT = share * config.distributableMrtPerBlock;
 
-        if (address in payments) {
-            payments[address] += amount * (config.percentageOfFeesToDistribute / 100);
-            mrt[address] += amountMRT;
-            merfees[address] +=  meramount * (config.percentageOfFeesToDistribute / 100);
-            rbxfees[address] +=  rbxamount * (config.percentageOfFeesToDistribute / 100);
+       	if (address in payments) {
+       		payments[address] += amount * (config.percentageOfFeesToDistribute / 100);
+       		mrt[address] += amountMRT;
+	} else {
+		payments[address] = amount * (config.percentageOfFeesToDistribute / 100);
+		mrt[address] = amountMRT;
+	}
 
-
-        } else {
-            payments[address] = amount * (config.percentageOfFeesToDistribute / 100);
-            mrt[address] = amountMRT;
-            merfees[address] =  meramount * (config.percentageOfFeesToDistribute / 100);
-            rbxfees[address] =  rbxamount * (config.percentageOfFeesToDistribute / 100);
-        }
-
-        console.log(address + ' will receive ' + amount + ' of(' + fee + ') and Mer amount: ' + meramount + ' (' + merfee + ') and ' + amountMRT + ' MRT for block: ' + block.height + ' share: ' + share);
+	if ( payout == true ) {
+        	console.log(address + ' will receive ' + amount + ' of(' + fee + ') and ' + amountMRT + ' MRT for block: ' + block.height + ' share: ' + share);
+	} else if ( payout == false ) {
+		console.log(address + ' marked as NOPAYOUT, will not receive fee share.');
+	}
     }
 };
 
@@ -363,8 +388,6 @@ var pay = function() {
     var transactions = [];
     var totalMRT = 0;
     var totalfees =0;
-    var totalmerfees=0;
-    var totalrbxfees=0;
 
     var html = "";
 
@@ -381,8 +404,8 @@ var pay = function() {
 "<div class=\"container\">" +
 "  <h3>Fee's between blocks " + config.startBlockHeight + " - " + config.endBlock + ", Payout #" + config.paymentid + "</h3>" +
 "  <h4>(LPOS address: " + config.address + ")</h4>" +
-"  <h5>29-06-2017: Hi all, again a short update of the fee's earned by the bearwaves node. Automated distribution, riding on BearWaves $BEAR. Cheers!</h5> " +
-"  <h5>You can always contact us by <a href=\"mailto:bearwaves@outlook.com\">E-mail</a> or in Waves Slack @w0utje <img src=\"https://www.bearwaves.nl/wp-content/uploads/2017/08/banksy.jpg\" style=\"width:50px;height:50px;\"></h5>" +
+"  <h5>29-06-2017: Hi all, again a short update of the fee's earned by the wavesnode 'Plukkieforger'. Greetings!</h5> " +
+"  <h5>You can always contact me by <a href=\"mailto:" + mailto + "\">E-mail</a></h5>" +
 "  <h5>Blocks forged: " + BlockCount + "</h5>" +
 "  <table class=\"table table-striped table-hover\">" +
 "    <thead> " +
@@ -390,8 +413,6 @@ var pay = function() {
 "        <th>Address</th>" +
 "        <th>Waves</th>" +
 "        <th>MRT</th>" +
-"        <th>Mercury</th>" +
-"        <th>Ripto Bux</th>" +
 
 "      </tr>" +
 "    </thead>" +
@@ -399,74 +420,52 @@ var pay = function() {
 
     for (var address in payments) {
         var payment = (payments[address] / Math.pow(10, 8));
-        console.log(address + ' will receive ' + parseFloat(payment).toFixed(8) + ' and ' + parseFloat(mrt[address]).toFixed(2) + ' MRT and ' + parseFloat(merfees[address]).toFixed(8) + ' Mercury!');
-        //send Waves fee
-        if (Number(Math.round(payments[address])) > 0) {
-            transactions.push({
-                "amount": Number(Math.round(payments[address])),
-               	"fee": config.feeAmount,
-                //"feeAssetId": config.assetFeeId,
-                "sender": config.address,
-                "attachment": config.paymentAttachment,
-                "recipient": address
-            });
-        }
-        //send MRT
-        if (Number(Math.round(mrt[address] * Math.pow(10, 2))) > 0) {
-            transactions.push({
-                "amount": Number(Math.round(mrt[address] * Math.pow(10, 2))),
-               	"fee": config.feeAmount,
-                //"feeAssetId": config.assetFeeId,
-                "assetId": "4uK8i4ThRGbehENwa6MxyLtxAjAo1Rj9fduborGExarC",
-                "sender": config.address,
-                "attachment": config.paymentAttachment,
-                "recipient": address
-            });
-        }
-        //send mercury fee
-        if (Number(Math.round(merfees[address])) > 0) {
-            transactions.push({
-                "amount": Number(Math.round(merfees[address])),
-               	"fee": config.feeAmount,
-                //"feeAssetId": config.assetFeeId,
-                "assetId": "HzfaJp8YQWLvQG4FkUxq2Q7iYWMYQ2k8UF89vVJAjWPj",
-                "sender": config.address,
-                "attachment": config.paymentAttachment,
-                "recipient": address
-            });
-        }
-        //this will send one BearWaves token to every leaser
-            transactions.push({
-                "amount": 100,
-               	"fee": config.feeAmount,
-                //"feeAssetId": config.assetFeeId,
-                "assetId": "9gnc5UCY6RxtSi9FEJkcD57r5NBgdr45DVYtunyDLrgC",
-                "sender": config.address,
-                "attachment": config.paymentAttachment,
-                "recipient": address
-            });
+
+	if ( nofeearray.indexOf(address) == -1 ) {
+
+		console.log(address + ' will receive ' + parseFloat(payment).toFixed(8) + ' and ' + parseFloat(mrt[address]).toFixed(2) + ' MRT!')
+
+		//send Waves fee
+		if (Number(Math.round(payments[address])) > 0) {
+			transactions.push({
+				"amount": Number(Math.round(payments[address])),
+				"fee": config.feeAmount,
+				//"feeAssetId": config.assetFeeId,
+				"sender": config.address,
+				"attachment": config.paymentAttachment,
+				"recipient": address
+			});
+		}
+
+		//send MRT
+		if (Number(Math.round(mrt[address] * Math.pow(10, 2))) > 0) {
+			transactions.push({
+				"amount": Number(Math.round(mrt[address] * Math.pow(10, 2))),
+				"fee": config.feeAmount,
+				//"feeAssetId": config.assetFeeId,
+				"assetId": "4uK8i4ThRGbehENwa6MxyLtxAjAo1Rj9fduborGExarC",
+				"sender": config.address,
+				"attachment": config.paymentAttachment,
+				"recipient": address
+			});
+		}
+
+	} else {
+		console.log(address + ' marked as NOPAYOUT, will not receive fee share.')
+	  }
 
         totalMRT += mrt[address];
         totalfees += payments[address];
-        totalmerfees += merfees[address];
-        totalrbxfees += rbxfees[address];
 
 
-
-        //html += "<tr><td>" + address + "</td><td>" + ((payments[address]/100000000).toPrecision(8) - 0.002) + "</td><td>" + (merfees[address]/100000000).toPrecision(8) + "</td><td>" + mrt[address].toPrecision(8) + "</td><td>" + (upfees[address]/100000000) + "</td></tr>\r\n";
         html += "<tr><td>" + address + "</td><td>" + 							 	//address column
 				((payments[address]/100000000).toFixed(8)) + "</td><td>" + 	//Waves fee's
 				mrt[address].toFixed(2) + "</td><td>" +                     //MRT
-				(merfees[address]/100000000).toFixed(8) + "</td><td>" +		//Mercury fee's
-				(rbxfees[address]/100000000).toFixed(8) + "</td></tr>" +		//Ripto Bux fee's
-
 				"\r\n";
-    }
+    }	//End for loop
 
     html += "<tr><td><b>Total</b></td><td><b>" + ((totalfees/100000000).toFixed(8)) +
 		 "</b></td><td><b>" + totalMRT.toFixed(2) + "</b></td><td><b>" +
-		  (totalmerfees/100000000).toFixed(8) + "</b></td><td><b>" +
-		  (totalrbxfees/100000000).toFixed(8) + "</b></td></tr>" +
 			"\r\n";
 
     html += "</tbody>" +
@@ -476,25 +475,45 @@ var pay = function() {
 "</body>" +
 "</html>";
 
-    console.log("total fees: " + (totalfees/100000000) + " total MRT: " + totalMRT + " total Mer: " + (totalmerfees/100000000) + " total Up: " + (totalrbxfees/100000000) );
+    console.log("total Waves fees: " + (totalfees/100000000).toFixed(8) + " (" + paymentconfigdata.feedistributionpercentage + "%) total MRT: " + totalMRT );
     var paymentfile = config.filename + config.paymentid + ".json";
     var htmlfile = config.filename + config.paymentid + ".html";
 
+//if ( !BlockCount == 0 ) { transactions.push( { "forgedblocks:": BlockCount } ) }
+
     fs.writeFile(paymentfile, JSON.stringify(transactions), {}, function(err) {
-        if (!err) {
-            console.log('payments written to ' + paymentfile + '!');
-        } else {
-            console.log(err);
-        }
+	if (!err) {
+		console.log('Planned payments written to ' + paymentfile + '!');
+	} else {
+		console.log(err);
+	  }
     });
 
     fs.writeFile(htmlfile, html, {}, function(err) {
-        if (!err) {
-            console.log('html written!');
+	if (!err) {
+		console.log('HTML written to ' + config.filename + config.paymentid  + '.html!');
+	} else {
+		console.log(err);
+	  }
+    });
+   
+    // Create logfile with paymentinfo for reference and troubleshooting 
+    fs.writeFile(config.filename + config.paymentid + ".log",
+	"total Waves fees: " + (totalfees/100000000).toFixed(8) + " (" + paymentconfigdata.feedistributionpercentage + "%) total MRT: " + totalMRT + "\n"
+	+ "Total blocks forged: " + BlockCount + "\n"
+	+ "Payment ID of batch session: " + config.paymentid + "\n"
+	+ "Payment startblock: " + paymentstartblock + "\n"
+	+ "Payment stopblock: " + paymentstopblock + "\n"
+	+ "Following addresses are skipped for payment; \n"
+	+ JSON.stringify(nofeearray) + "\n", function(err) {
+   	if (!err) {
+        	    console.log('Summarized payoutinfo is written to ' + config.filename + config.paymentid + ".log!");
+		    console.log();
         } else {
             console.log(err);
-        }
-    });
+	  }
+    	});
+    // End create logfile
 
     var latestblockinfo = {};
     latestblockinfo["leases"]=myLeases;
@@ -503,12 +522,13 @@ var pay = function() {
 
     fs.writeFile(blockleases, JSON.stringify(latestblockinfo), {}, function(err) {
         if (!err) {
-            console.log('leaseinfo written to ' + blockleases + '!');
+            console.log('Leaseinfo written to ' + blockleases + '!');
         } else {
             console.log(err);
         }
     });
 
+    
     var ActiveLeaseData = getActiveLeasesAtBlock(LastBlock);
 
     fs.writeFile("LastBlockLeasers.json", JSON.stringify(ActiveLeaseData), {}, function(err) {
@@ -518,8 +538,98 @@ var pay = function() {
             console.log(err);
         }
     });
+    
+   // Write the current payid of the batch to the payment queue file. This is used by the masspayment tool
+   let paymentqueue = function (callback) {
 
+         payarray = [ ];
 
+         if ( fs.existsSync(payqueuefile) == false ) {  //There is no paymentqueue file!
+
+		console.log("\nApparently there's no payment queue file yet. Adding paymentid '" + payid + "' of current batch to queuefile " + payqueuefile);
+		console.log("You can now either start the next collector session, when finished it will automatically be added to the payment queue.");
+                console.log("\nYou can now verify the payment queue with the payment check tool ('start_checker' or 'node checkPayment.js').");
+                console.log("All pending payments are automatically found and checked. It tells you which payment tool has lowest tx-cost.");
+                console.log("This will be the masstransfer tool (masstx.js) for bundled sub-transactions or the massPayment.js for single transactions.");
+                console.log("Probably masstx.js will be most cost efficient. Just run the checker tool and you'll see.\n");
+		console.log("Then execute the actual payments, which transfers the revenue shares to all leasers for all jobs in the")
+		console.log("payment queue. Whenever a job is finished, it is automatically removed from the payment queue file.\n")
+
+                payarray = [ payid ];
+
+         } else {       // there is a paymentqueue file!
+
+                rawarray = fs.readFileSync(payqueuefile, function(err, data)  { //read it into array
+                        if (err) { console.log("\nWARNING! Error reading paymentqueue file. terminating tool. Run batch " + payid + " again.\n");return; }
+                });
+                payarray = JSON.parse(rawarray); //read it into array
+
+                //case 1. It's empty
+                if ( payarray.length == 0 ) {
+                        console.log("\nCurrently there are no payments pending in the queue.");
+                        console.log("Adding paymentid '" + payid + "' to queuefile " + payqueuefile + ". This is the only payment in the queue now :-)\n");
+                        console.log("You can now either start the next collector session, when finished it will automatically be added to the payment queue.");
+                        console.log("\nOr you can verify the payment queue with the payment check tool (node checkPaymentsFile.js). All pending payments are");
+                        console.log("automatically found and checked. It tells you which payment tool has lowest tx-cost.");
+			console.log("Probably masstx.js will be most cost efficient. Just run the checker tool and you'll see.\n");
+                	console.log("Then execute the actual payments, which transfers the revenue shares to all leasers for all jobs in the")
+                	console.log("payment queue. Whenever a job is finished, it is automatically removed from the payment queue file.\n")
+ 
+                        payarray = [ payid ]
+                }
+                //case 2. It's not empty, but has paymentid duplicates waiting
+                else if ( payarray.includes (payid) == true ) {
+
+                        console.log("\nWARNING! Found paymentid " + payid + " already in queue. This means there has already ran a batch with this id,\n"
+                                   +"for which payments were not done yet. If you expect this because you used the old batchinfo file again, then it's fine.\n"
+				   +"However, if you weren't expecting a job with same paymentid in the queue (which normally shouldn't), then check logs!!!\n"
+                                   +"The paymentqueue stays the same and has following payments waiting: [" + payarray + "].\n"
+				   +"\nThe batchinfo that was used in the current run is:\n")
+			console.log(mybatchdata)
+			console.log("\nYou can verify the actual payments that will be done in a dry run first by starting the checkPaymentsFile.js script.\n")
+                }
+                //case 3. It's not empty. Add current batch to queue
+                else {
+                        console.log("\nFound " + payarray.length + " pending payments already in queue. Adding current batch with paymentid " + payid + " to the queue.")
+                        payarray.push(payid);
+                        console.log("The total queue waiting for payouts is now: " + payarray);
+                }
+
+           }
+
+	nextpayid = payid + 1
+	console.log("The next batch session will be '" + nextpayid + "'\n");
+
+	fs.writeFileSync(payqueuefile, JSON.stringify(payarray), function (err)  {
+		if (err) {
+			console.log("\nWARNING! Error updating payment queue file. Terminating tool. Run batch " + payid + " again.\n");
+			return;
+		}
+   	});
+   	callback();
+   };
+
+   // update json batchdata for next collection round
+   let nextbatchdata = function () {
+
+	mybatchdata["paymentid"] = (payid + 1).toString()
+	mybatchdata["paystartblock"] = (paymentstopblock).toString()
+	mybatchdata["paystopblock"] = (paymentstopblock + blockwindowsize).toString()
+	mybatchdata["startscanblock"] = startscanblock.toString()
+	
+	fs.writeFile(batchinfofile, JSON.stringify(batchinfo), (err) => {
+		if (err) {
+			console.log("Something went wrong updating the file:" + batchinfofile + "!");
+			console.log(err);
+		} else {
+			console.log("Batchinfo for next payment round is updated in file " + batchinfofile + "!");
+			console.log();
+	  	  }
+    	});
+    };
+
+    // update the paymentqueue and callback update batchdata function
+    paymentqueue(nextbatchdata);
 };
 
 /**
