@@ -2,7 +2,7 @@ var request = require('sync-request');
 var fs = require('fs');
 
 /**
- * V 2.0.3
+ * V 2.1.0
  * w0utje's edit of Hawky's LPoSDistributor
  * added mercury and ripto bux fee calculation
  * added (cancelled) leases infomation to be re-used next payout
@@ -15,6 +15,7 @@ var fs = require('fs');
  * mercury and ripto bux both have 8 decimals and are sent with 1 decimal, so there's plenty of space to divide those assets.
  * keep this in mind when adding your own asset fee's
  * Added, sponsored fees and aliases
+ * Added Waves block reward
  *
  *
  * Put your settings here:
@@ -32,13 +33,13 @@ var fs = require('fs');
  */
 var config = {
     address: '3PEFQiFMLm1gTVjPdfCErG8mTHRcH2ATaWa',
-    startBlockHeight: 1150070,
-    endBlock: 1160406,
+    startBlockHeight: 1724898,
+    endBlock: 1734843,
     distributableMrtPerBlock: 0,  //MRT distribution stopped
     filename: 'payment', //.json added automatically
     paymentid: "xx",
     node: 'http://127.0.0.1:6869',
-    //node: 'http://nodes.wavesnodes.com',
+    //node: 'https://nodes.wavesplatform.com',
     assetFeeId: null, //not used anymore with sponsored tx
     feeAmount: 1,
     paymentAttachment: "DVCsMf2Av2pvvM8GNzzP1tQKZtd4jWfcHJQj9bky32RR6janfLK2", //thank you for leasing to bearwaves...
@@ -147,7 +148,15 @@ var prepareDataStructure = function(blocks) {
 		}
 		var blockwavesfees=0;
 		var blockmerfees=0;
-		var blockrbxfees=0;
+        var blockrbxfees=0;
+        
+        if(myblock)
+        {
+            if(block.height > 1740000)
+            {
+                wavesFees += 600000000;    
+            }
+        }
 
         block.transactions.forEach(function(transaction)
         {
