@@ -102,8 +102,11 @@ var startDistribute = function(richlist) {
 				{        
             percentage = amount / total;
             amountToSend = Math.floor(config.amountToDistribute * percentage);
-				 } else {  //airdrop amount is the same for each address
-				    amountToSend = config.amountToDistribute;
+                 } else {  //airdrop amount is the same for each address
+                    if(amount > 0)
+                    {
+                        amountToSend = config.amountToDistribute;
+                    }
 				 }
 
             totalDistributed += Number(amountToSend);
