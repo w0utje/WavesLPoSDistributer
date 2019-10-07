@@ -152,9 +152,9 @@ var prepareDataStructure = function(blocks) {
         
         if(myblock)
         {
-            if(block.height > 1740000)
+            if(block.height >= 1740000)
             {
-                wavesFees += 600000000;    
+                wavesFees += block.reward;    
             }
         }
 
