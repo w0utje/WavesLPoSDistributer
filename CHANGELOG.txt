@@ -19,6 +19,35 @@
  * Thank you and Enjoy!
  *
 /* =====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES===WAVES====WAVES====
+Version 2.1
+-----------
+- date 12 october 2019
+
+- Please refer to README.md which necessary steps to take to get you up and running.
+  It will take you about 1 hour to set parameters and get you started!
+
+- This version is adapted to the feature 14 activation (Block Rewards and Community Driven Monetary Policy)
+  Feature 14 has been activated at block 1740000 in the Waves blockchain.
+  This change increases currently the block rewards with 6 Waves (initial voted by Miners).
+  The rewards of Mrt (miner reward token) is therefore deprecated due to this policy change.
+  
+- Changes in configurationfile 'config.json'
+  - added separate variable for paymentnode "paymentnode_api". This is the node which is used by the payment scripts.
+    Now you can use a different node to for payment transactions and another one for collector requests. The latter is
+    used by the appng.js script.
+    You can also use the same node offcourse.
+  - changed variable 'querynodeapikey' to 'paymentnode_apikey'.
+    Pay attention if you upgrade to this new version, to map your current configfile values according this change!!
+
+- changed README.md file accordingly and optimized some text
+
+- Files updated
+  - appng.js
+  - massPayment.js
+  - masstx.js
+  - CHANGELOG.txt
+  - README.md
+
 Version 2.0
 -----------
 - date 01 februari 2019
