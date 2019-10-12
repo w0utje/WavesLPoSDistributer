@@ -1,14 +1,15 @@
 {
 	"paymentconfig" : {
+		"paymentnode_api" : "http://localhost:6869",
+		"paymentnode_apikey" : "<<your api key here>>",
 		"querynode_api" : "http://localhost:6869",
-		"querynodeapikey" : "<<your api key here>>",
 		"feedistributionpercentage" : "90",
-		"mrtperblock" : "5",
+		"mrtperblock" : "0",
 		"leasewallet" : "<<your leasewallet here>>",
 		"transactionattachment" : "NK2oQJzq7sjCvh7AjJcLjLT9Ax",
 		"firstleaserblock" : "1370000",
 		"paystartblock" : "1370000",
-		"blockwindowsize" : "20160",
+		"blockwindowsize" : "5000",
 		"nopayoutaddresses" : [ ],
 		"mail" : "<<your email address>>"
 	},
