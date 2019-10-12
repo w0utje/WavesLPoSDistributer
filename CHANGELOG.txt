@@ -42,6 +42,7 @@ Version 2.1
 - changed README.md file accordingly and optimized some text
 
 - Files updated
+  - config.json
   - appng.js
   - massPayment.js
   - masstx.js
