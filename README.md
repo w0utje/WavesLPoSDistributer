@@ -1,4 +1,4 @@
-# WavesLPoSDistributer          v2.0
+# WavesLPoSDistributer          v2.1
 A revenue distribution tool for Waves nodes and the leasers
 
 Welcome to Plukkies version of the LPoSdistribution script, 'the lazy' version.
@@ -50,15 +50,16 @@ npm install
 ```sh
 {
   "paymentconfig" : {
+    "paymentnode_api" : "http://localhost:6869",
+    "paymentnode_apikey" : "<<your api key here>>",      <-- mandatory value (also remove << and >> chars) 
     "querynode_api" : "http://localhost:6869",
-    "querynodeapikey" : "<<your api key here>>",      <-- mandatory value (also remove << and >> chars) 
     "feedistributionpercentage" : "90",
-    "mrtperblock" : "5",
+    "mrtperblock" : "0",
     "leasewallet" : "<<your leasewallet here>>",      <-- mandatory value (also remove << and >> chars)
     "transactionattachment" : "NK2oQJzq7sjCvh7AjJcLjLT9Ax",
     "firstleaserblock" : "1370000",
     "paystartblock" : "1370000",
-    "blockwindowsize" : "20160",
+    "blockwindowsize" : "5000",
     "nopayoutaddresses" : [ ],
     "mail" : "<<your email address>>"                 <-- optional value (also remove << and >> chars)
   },
@@ -86,17 +87,21 @@ Here's a clarification of all key/value pairs;
 
 **paymentconfig**   (This part is for payment data)
 ```
- - "querynode_api"
-   This is the node (name or ip address) and tcp port of the API server where you run your queries to.
-   If you run the LPOSdistributer scripts on your forging node itself, this will be the default (localhost).
-   If you run the script on another host, then you use the external ip address of your forging node here.
-
- - "querynodeapikey"
-   The API key of your forging node.
+ - "paymentnode_api"
+   This is the node on which you will execute your payment transactions (your forging node)
+ 
+ - "paymentnode_apikey"
+   The API key of your forging node. This key is also configured in the configuration file of your
+   Waves node configurtion file.
    
    WARNING
    keep it safe and confidential to you. With the key you can POST transactions!
    For security reasons, remove 'rwx' worldrights from config.json : chmod o-rwx config.json
+ 
+ - "querynode_api"
+   This is the node (name or ip address) and tcp port of the API server where you run your queries to.
+   If you run the LPOSdistributer scripts on your forging node itself, this will be the default (localhost).
+   If you run the script on another host, then you use the external ip address of your forging node here.
  
  - "feedistributionpercentage"
    How many percent of the transaction fees in your forged blocks, are you willing to share with
@@ -104,11 +109,12 @@ Here's a clarification of all key/value pairs;
    A reasonable value could be 90%, so it means you keep 10% for the effort and cost of the node ownership.
  
  - "mrtperblock"
+   This feature is depricated. There are no Mrt rewards anymore since feature 14 is activated!
    Waves blockchain has a reward in Mrt tokens for every block your node forged. This value determines
    how many Mrt tokens per block are you willing to share with your leasers.
    Put this on 0 if you don't want to share them with leasers. Be sure it's not more then what
    waves pays to you per block, which is ~9 Mrt if you want to pay some to your leasers.
-   default: 5
+   default: 0
  
  - "leasewallet"
    This is the address of your leasewallet, i.e. "3P7ajba2wWLXq5x1G8VaoaVqbUb1dDp1fm2".
@@ -119,6 +125,8 @@ Here's a clarification of all key/value pairs;
    You can encode your message on an online encoder website.
  
  - "firstleaserblock"
+   If you already use a previous version of Plukkieforger's WavesLPOSdistributer, then you can leave
+   it to the default. No need to change!
    Put here the block where your first leaser started his lease to you. You can reveal that by
    opening the wavesclient, go to the suitcase icon and go to 'leasing'. There you scroll all the way
    down where you see your first 'incoming leasing'. Click on the three dots and then reveal 'TX info'.
@@ -131,6 +139,8 @@ Here's a clarification of all key/value pairs;
    for you :-)
  
  - "paystartblock"
+   If you already use a previous version of Plukkieforger's WavesLPOSdistributer, then you can leave
+   it to the default. No need to change!
    Put here the first block from which you take into consideration payments. You can just leave it
    to the default or you can take the same block as the first leaser if you changed that.
    You would only need to change it if you already did some payments and want to skip those to avoid
