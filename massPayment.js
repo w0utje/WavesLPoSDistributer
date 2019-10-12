@@ -13,7 +13,7 @@ if (fs.existsSync(configfile)) { //configurationfile is found, let's read conten
         paymentconfigdata = jsonconfiguration['paymentconfig']
 
         //define all vars related to the payment settings
-        var myquerynode = paymentconfigdata['querynode_api']
+        var myquerynode = paymentconfigdata['paymentnode_api']
         var mailto = paymentconfigdata['mail']
 
         //define all vars related to the tool settings
@@ -30,7 +30,7 @@ else {
 var config = {
     payoutfileprefix: payoutfilesprefix,
     node: myquerynode,
-    apiKey: paymentconfigdata.querynodeapikey
+    apiKey: paymentconfigdata.paymentnode_apikey
 };
 
 const paymentqueuefile = payqueuefile //Queue file with all payment ids to be processed
