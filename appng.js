@@ -23,7 +23,6 @@ if (fs.existsSync(configfile)) { //configurationfile is found, let's read conten
 	var blockwindowsize = parseInt(paymentconfigdata['blockwindowsize'])
 	var nofeearray = paymentconfigdata['nopayoutaddresses']
 	var mailto = paymentconfigdata['mail']
-
 	//define all vars related to the tool settings
 	var batchinfofile = toolconfigdata['batchinfofile']
 	var payqueuefile = toolconfigdata['payqueuefile']
@@ -43,7 +42,7 @@ if (fs.existsSync(batchinfofile)) {
    mybatchdata = batchinfo["batchdata"];
    paymentstartblock = parseInt(mybatchdata["paystartblock"]); //block where to start payments
    paymentstopblock = parseInt(mybatchdata["paystopblock"]); //block UNTIL (tot) to get payments
-   startscanblock = parseInt(mybatchdata["startscanblock"]);
+   startscanblock = parseInt(mybatchdata["scanstartblock"]);
    payid = parseInt(mybatchdata["paymentid"]); 
 
    // Collect height of last block in waves blockchain
@@ -187,18 +186,22 @@ var start = function() {
 var prepareDataStructure = function(blocks) {
 
     blocks.forEach(function(block,index) {
-    var checkprevblock = false;
+    	var checkprevblock = false;
 	var myblock = false;
         var wavesFees = 0;
 
-        if (block.generator === config.address)
-        {
-            myForgedBlocks.push(block);
-            checkprevblock = true;
-			myblock = true;
-		}
-		var blockwavesfees=0;
+        if (block.generator === config.address) {
+		
+		myForgedBlocks.push(block);
+            	checkprevblock = true;
+		myblock = true;
+	}
 
+	var blockwavesfees=0;
+	
+	if (myblock) {
+		if (block.height >= 1740000) { wavesFees += block.reward } //Feature 14 activated at 1740000
+	}
         block.transactions.forEach(function(transaction)
         {
             // type 8 are leasing tx
@@ -615,7 +618,7 @@ var pay = function() {
 	mybatchdata["paymentid"] = (payid + 1).toString()
 	mybatchdata["paystartblock"] = (paymentstopblock).toString()
 	mybatchdata["paystopblock"] = (paymentstopblock + blockwindowsize).toString()
-	mybatchdata["startscanblock"] = startscanblock.toString()
+	mybatchdata["scanstartblock"] = startscanblock.toString()
 	
 	fs.writeFile(batchinfofile, JSON.stringify(batchinfo), (err) => {
 		if (err) {
