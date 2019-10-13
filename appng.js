@@ -73,7 +73,7 @@ else { //Did not find batchinfofile, so it's probably first collector run
 
 	var batchinfo = { "batchdata" : {
 				"paymentid" : payid,
-				"startscanblock" : startscanblock,
+				"scanstartblock" : startscanblock,
 				"paystartblock" : paymentstartblock,
 				"paystopblock" : paymentstopblock
 					}
@@ -618,8 +618,6 @@ var pay = function() {
 	mybatchdata["paymentid"] = (payid + 1).toString()
 	mybatchdata["paystartblock"] = (paymentstopblock).toString()
 	mybatchdata["paystopblock"] = (paymentstopblock + blockwindowsize).toString()
-	mybatchdata["scanstartblock"] = startscanblock.toString()
-	
 	fs.writeFile(batchinfofile, JSON.stringify(batchinfo), (err) => {
 		if (err) {
 			console.log("Something went wrong updating the file:" + batchinfofile + "!");
