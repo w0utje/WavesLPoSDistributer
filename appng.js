@@ -60,7 +60,7 @@ if (fs.existsSync(batchinfofile)) {
    
    if (paymentstopblock > lastblockheight) {
 	let blocksleft = paymentstopblock - lastblockheight
-        console.log("\n Current blockheight is " + lastblockheight + ". Waiting to reach " + paymentstopblock + " for next payment round.")
+        console.log("\n Current blockheight is " + lastblockheight + ". Waiting to reach " + paymentstopblock + " for next collector round.")
         console.log(" This is approximaly in ~" + Math.round((blocksleft)/60) + " hrs (" + (Math.round((blocksleft/60/24)*100))/100 + " days).\n")
         return;
    } else { var backupbatchinfo = fs.writeFileSync(batchinfofile + ".bak",fs.readFileSync(batchinfofile)) }  //Create backup of batchdatafile
