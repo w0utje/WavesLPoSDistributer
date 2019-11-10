@@ -1,4 +1,4 @@
-# WavesLPoSDistributer          v2.1
+# WavesLPoSDistributer          v2.2
 A revenue distribution tool for Waves nodes and the leasers
 
 Welcome to Plukkies version of the LPoSdistribution script, 'the lazy' version.
@@ -30,6 +30,10 @@ This version is succesfully tested with versions;
 To install node.js and npm, do following steps;
  - add repository: curl -sL https://deb.nodesource.com/setup_10.x | sudo bash -
  - install both packages: sudo apt-get install -y nodejs
+
+In release 2.2 a new tool 'txoptimizer.py' was added. This need python3.
+It has been succesfully tested with python 3.6.8 on Ubuntu.
+To install python3 on ubuntu: apt install python3.
 
 You can now proceed with the actual scripts installation and configuration.
 Read on with one of the following steps which apply to your setup;
@@ -75,7 +79,8 @@ npm install
     "transactionapisuffix" : "/assets/transfer",
     "masstxapisuffix" : "/assets/masstransfer",
     "masstransferversion" : "1",
-    "relevantassets" : [ "Waves", "Mrt" ]
+    "relevantassets" : [ "Waves", "Mrt" ],
+    "optimizerdir" : "txoptimizer"
   }
 }
 ```
@@ -215,7 +220,10 @@ Here's a clarification of all key/value pairs;
  - "relevantassets"
    Which assets you actually will payout to your leasers. If you would remove 'Mrt',
    then collector sessions and dry payment checks would pretent as if 'Mrt' is
-   included. However, the actual payment tool would not execute transactions for it. 
+   included. However, the actual payment tool would not execute transactions for it.
+ 
+ - "optimizerdir"
+   The folder where 'txoptimizer' runs are archived for backup and reference purpose.
 ```
 
 WARNING
@@ -258,6 +266,17 @@ If you use other version of the script, like from Marc jansen or w0utje, it's ea
    Please see chapter "Installation steps: first time users, point 3" where all settings
    are explained in detail.
 
+## Summary steps using the tool after installation
+- run a collector session: ./start_collector
+- run checker: ./start_checker
+- pay: node masstx
+
+If you want to run multiple collector sessions before you do a payment:
+- run as many collector sessions you want: ./start_collector.sh
+- when satisfied about all your collections, run checker: ./start_checker.sh
+- run optimizer: ./txoptimizer.py
+- execute your payment: node masstx
+
 ## Running the collector sessions
 After a successful configuration of the tool, start with:
 ```sh
@@ -273,9 +292,11 @@ Therefore I've put 'start_collector.sh' script as starter which runs 'node appng
 some memory optimized settings.
 For me it works with tweaks to 65KB of stack memory and 8GB of available RAM. So use 'start_collector.sh'
 if you run into problems and tweak to your available RAM. If it keeps on exitting, then shrink the block
-batchsize that are collected in one batch.
+batchsize that are collected during one batch.
 This way multiple smaller batchsizes will be collected and consume less memory.
 To decrease the initial batchsize, edit file config.json and set "blockwindowsize" smaller.
+With smaller collector batches, you get multiple pending payments in the payment queue.
+These multiple payments jobs can be merged by running the 'txoptimizer.py' tool.
 
 NOTE
 To run the collector tool every night @1 AM, edit /etc/crontab and put in following line;
@@ -302,7 +323,7 @@ After the collector ran (or ran multiple times as you wish), you can check the p
 in the payment queue. The script for checking is checkPaymentsFile.js. After you configured some
 settings (see above), you can start with;
 ```sh
-node checkPaymentsFile.js
+node checkPaymentsFile.js or ./start_checker
 ```
 The script reads all all batchIDs from the payqueue.dat file and the corresponding leaser files that were
 constructed by the collector tool. It does only checking, nothing else. The results for all pending payments
@@ -314,7 +335,21 @@ See more about both payment possibilities in next chapter (doing the payments).
 After checking this information, you have a good overview what tokens and the amounts are planned for payout
 and which transaction type is best to use!
 
+## Optimizing multiple pending payments
+If you execute multiple collector sessions before you will do a payment to your leasers, you will
+have a payment queue with multiple pending payment jobs. This would mean multiple transactions, often to the
+same leasing recipients.
+With txoptimizer, you optimize your payment queue. The tool will scan the payment queue and all the related
+data files and will merge the data of all jobs in one new job. Fees for one and the same recipient are
+added up. This way the number of transactions are minimized. This saves on transfer cost and storage in the
+blockchain.
+
 ## Doing the payments
+
+NOTE
+You can readon here about the two different payment tools and how they work. However,
+advise is to always use 'masstx.js' to do payments.
+
 For the actual payout, you can choose the masstx.js tool or the massPayment.js tool. They can be started with:
 ```sh
 node masstx.js or node massPayment.js 
@@ -350,6 +385,7 @@ However, it is strongly recommended to check the payments before the actual paym
 So what you could do for example, run from crontab;
 - run the collector session every saterday evening
 - run the checkPaymentFile every sunday, mail the output, so you have visibility
+- run the txoptimizer, mail the output, so you have visibility
 - run the massPayment job every tuesday
 
 With this scheme, you have a nice automated schema and works as follows;
