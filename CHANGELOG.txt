@@ -76,6 +76,7 @@ Version 2.2
   - masstx.js
   - CHANGELOG.txt
   - README.md
+  - config.json
 
 - Files added
   - txoptimizer.py
