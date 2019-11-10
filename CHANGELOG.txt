@@ -19,6 +19,67 @@
  * Thank you and Enjoy!
  *
 /* =====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES===WAVES====WAVES====
+
+Version 2.2
+-----------
+- date 10 november 2019
+
+- For a fresh install, please refer to README.md for all necessary steps to get you up and running.
+  It will take you about 1 hour to set parameters and get you started!
+
+- This version introduces two major changes and some minor textual changes.
+
+  1. collector tool (appng.js) adds new json data key 'pay'
+     When the collector session has finished, the payout data for all recipients
+     is saved to a json file. If there are 'nopayoutaddresses' defined in the configfile,
+     then these recpients are not saved in the json file and their statistics are lost.
+     This release adds a new json key 'pay' to the data for every recipient. 
+     Its value will be 'yes' if recipient gets payed and 'no' if it's a 'nopayout' address.
+     Default it will be 'yes' for every recipient written to file.
+     With this change, the 'nopayout' will be kept per job. It also shows more statistics
+     when the other tools run (total amounts and 'nopayout' amount).
+     
+     Below a sniplet of the json data with the new key 'pay':
+     
+     {
+        "amount": 2117004766,
+        "attachment": "USkz6M7kM8X2vR89LHm48WnUK3YdBWV55W4RJ92y8jbV1XviPSzbTCdXWxtx",
+        "fee": 100000,
+        "pay": "no",
+        "recipient": "3PVBCT68cGMgodHuuXu3qftDx8M8s8mgOhj",
+        "sender": "3P6qjba4wWLXq6t1G8VaoaVqbUb1dDp8mf1"
+    },
+    
+     NOTE
+     The change is backwards compatible with older json files, that do not have the 'pay' key.
+     All recpients found in the json data without the 'pay' key, will be assumed 'yes'.
+     
+  2. Added new tool 'txoptimizier.py' to optimize multiple pending payment jobs
+     When a collector run has finished, the payment data is written to file,
+     waiting in the queue to get payed by the masstx tool.
+     However, if you execute more collector runs before you do your payments, you will
+     have multiple pending payment jobs in the queue. Allthough you can perfectly
+     execute the payments with masstx, you will execute a masstransaction for every job
+     in the queue. This is inefficient and more costly. This can be optimized by using
+     the 'txoptimizer.py' tool before you do you your payments.
+     Just start the 'txoptimizer.py' tool and it will merge all the json data of the
+     pending payments in one json file. It automatically backups original data and writes
+     new data and logfiles. It also shows old and new statistics for the pending job.
+    
+     NOTE
+     - runtime python3
+
+- Files updated
+  - appng.js
+  - checkPaymentsFile.js
+  - massPayment.js
+  - masstx.js
+  - CHANGELOG.txt
+  - README.md
+
+- Files added
+  - txoptimizer.py
+
 Version 2.1
 -----------
 - date 12 october 2019
