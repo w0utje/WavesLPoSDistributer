@@ -140,12 +140,21 @@ function getpayqueue (myfunction) {
 		var transactioncount = parseInt(batchpaymentarray.length)	//how many transactions current batch		
 		var nrofmasstransfers //How many masstransfers needed for all payments
 		var txdelay	//total time needed for all masstransfers in current batch
+		var payout
 
 		batchpaymentarray.forEach( function (asset,index) {
+			
+			if ( !asset.pay ) { //No pay key, means old collector version used, -> add pay key 'yes'}
+                                batchpaymentarray[index].pay = 'yes'
+				payout = 'yes'
+                        } else { //Found pay key, get value yes/no
+				payout = asset.pay
+			}
 
-                	if ( !asset.assetId ) { wavestransactions++ }
-			else if ( asset.assetId && coins.includes('Mrt') ) { mrttransactions++ }
-
+			if (payout == 'yes') {
+                		if ( !asset.assetId ) { wavestransactions++ }
+				else if ( asset.assetId && coins.includes('Mrt') ) { mrttransactions++ }
+			}
 		})
 
 		nrofmasstransfers = Math.ceil(wavestransactions/maxmasstransfertxs) + Math.ceil(mrttransactions/maxmasstransfertxs)
@@ -361,6 +370,7 @@ var masstransferobject = function (paymentarray, cb) {
 	var mrt = 'Mrt'
 	var common = 'Common'
 	var wavesamount = 0
+	var payout
 
 	transfers[common] = {}
 	transfers[waves] = []	//empty array where we will push waves recipients and amounts
@@ -368,10 +378,12 @@ var masstransferobject = function (paymentarray, cb) {
 
 	paymentarray.forEach (function(asset, index) {
 
+		payout = asset.pay
+
 		if ( asset.attachment ) { if ( !transfers[common].attachment == true ) { transfers[common].attachment = asset.attachment } }
 		if ( asset.sender ) { if ( !transfers[common].sender == true ) { transfers[common].sender = asset.sender } }
 
-		if ( !asset.assetId ) { //No assetId means found Waves transaction
+		if ( !asset.assetId && payout == 'yes' ) { //No assetId means found Waves transaction
 
 			var wavesdata = {	"recipient" : asset.recipient,
 						"amount" : asset.amount }
@@ -380,7 +392,7 @@ var masstransferobject = function (paymentarray, cb) {
 			transfers[common].Wavesamount = wavesamount
 			transfers[waves].push(wavesdata)
 
-		} else { //Found Mrt transaction
+		} else if ( asset.assetId && payout == 'yes' ) { //Found Mrt transaction
 			
 			if ( !transfers[common].MrtassetId == true ) { transfers[common].MrtassetId = asset.assetId }
 

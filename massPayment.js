@@ -110,7 +110,17 @@ function getpayqueue (myfunction) {
 
                 payoutfilename = config.payoutfileprefix + batchid + '.json'
 		batchpaymentarray = JSON.parse(fs.readFileSync(payoutfilename),toString())	//All transaction details current batch
+		
 		var transactioncount = parseInt(batchpaymentarray.length)	//how many transactions current batch
+		
+		for (var cnt in batchpaymentarray) {
+			if (batchpaymentarray[cnt].pay) { //if pay key exists, check yes/no
+				if (batchpaymentarray[cnt].pay == 'no') { //no payout, decrement txs counter
+					transactioncount--
+				}
+			}
+		}
+
 		var transactiondelay = transactioncount*transactiontimeout	//total time needed for all transactions one current batch
 		timeoutarray[index+1] = timeoutarray[index] + transactiondelay
 
@@ -165,9 +175,19 @@ var start = function(jsonarray, queueid) {
  */
 var doPayment = function(payments, counter, batchid) {
 	var payment = payments[counter];
+	var dopayment
+	if (payments[counter].pay) { //if pay key exists, check yes/no
+		if (payments[counter].pay == 'yes') { //payout
+			dopayment = 'yes'
+		} else { dopayment = 'no' }
+	} else {
+		dopayment = 'yes'
+	}
 
 	if ( payment.assetId == undefined ) { var assetname = 'Waves' }
 	else { assetname = payment.assetId }
+	
+	if (dopayment == 'yes') {
 
 	setTimeout(function() {
 		request.post({  url: config.node + toolconfigdata.transactionapisuffix,
@@ -186,6 +206,15 @@ var doPayment = function(payments, counter, batchid) {
 					  }
 				});
 	}, transactiontimeout);
+	} //endif dopayment yes
+	else { //no payout found
+		console.log('[batchID ' + batchid + '] ' + counter + ' NO PAYOUT ' + payment.amount +
+                                                            ' of ' + assetname + ' to ' + payment.recipient + '!');
+		counter++
+		if (counter < payments.length) {
+			doPayment(payments, counter, batchid);
+		} else { updatepayqueuefile(newpayqueue,batchid) }
+	}
 };
 
 testcases();

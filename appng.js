@@ -55,7 +55,6 @@ if (fs.existsSync(batchinfofile)) {
 	}
    };
    
-	
    let blockchainresponse = request(options.method, options.baseUrl + options.uri, options.headers)
    let lastblockheight = parseInt(JSON.parse(blockchainresponse.body).height) 
    
@@ -379,7 +378,7 @@ var distribute = function(activeLeases, amountTotalLeased, block) {
 	if ( payout == true ) {
         	console.log(address + ' will receive ' + amount + ' of(' + fee + ') and ' + amountMRT + ' MRT for block: ' + block.height + ' share: ' + share);
 	} else if ( payout == false ) {
-		console.log(address + ' marked as NOPAYOUT, will not receive fee share.');
+		console.log(address + ' marked as NOPAYOUT: ' + amount + ' of(' + fee + ') and ' + amountMRT + ' MRT for block: ' + block.height + ' share: ' + share);
 	}
     }
 };
@@ -392,6 +391,8 @@ var pay = function() {
     var transactions = [];
     var totalMRT = 0;
     var totalfees =0;
+    var nopaywaves = 0
+    var nopaymrt = 0
 
     var html = "";
 
@@ -425,7 +426,9 @@ var pay = function() {
     for (var address in payments) {
         var payment = (payments[address] / Math.pow(10, 8));
 
-	if ( nofeearray.indexOf(address) == -1 ) {
+	if ( nofeearray.indexOf(address) == -1 ) { //This address will get payed (it's not found in nopay array)
+
+		payout = true
 
 		console.log(address + ' will receive ' + parseFloat(payment).toFixed(8) + ' and ' + parseFloat(mrt[address]).toFixed(2) + ' MRT!')
 
@@ -437,7 +440,8 @@ var pay = function() {
 				//"feeAssetId": config.assetFeeId,
 				"sender": config.address,
 				"attachment": config.paymentAttachment,
-				"recipient": address
+				"recipient": address,
+				"pay" : "yes"
 			});
 		}
 
@@ -450,12 +454,46 @@ var pay = function() {
 				"assetId": "4uK8i4ThRGbehENwa6MxyLtxAjAo1Rj9fduborGExarC",
 				"sender": config.address,
 				"attachment": config.paymentAttachment,
-				"recipient": address
+				"recipient": address,
+				"pay" : "yes"
 			});
 		}
 
-	} else {
-		console.log(address + ' marked as NOPAYOUT, will not receive fee share.')
+	} else { //NOPAYOUT address, will not get payed
+
+		payout = false
+
+		console.log(address + ' marked as NOPAYOUT, will not receive ' + parseFloat(payment).toFixed(8) + ' and ' + parseFloat(mrt[address]).toFixed(2) + ' MRT!')
+
+		//send Waves fee
+                if (Number(Math.round(payments[address])) > 0) {
+			nopaywaves += payments[address]
+                        transactions.push({
+                                "amount": Number(Math.round(payments[address])),
+                                "fee": config.feeAmount,
+                                //"feeAssetId": config.assetFeeId,
+                                "sender": config.address,
+                                "attachment": config.paymentAttachment,
+                                "recipient": address,
+				"pay" : "no"
+                        });
+                }
+
+                //send MRT
+                if (Number(Math.round(mrt[address] * Math.pow(10, 2))) > 0) {
+			nopaymrt += mrt[address]
+                        transactions.push({
+                                "amount": Number(Math.round(mrt[address] * Math.pow(10, 2))),
+                                "fee": config.feeAmount,
+                                //"feeAssetId": config.assetFeeId,
+                                "assetId": "4uK8i4ThRGbehENwa6MxyLtxAjAo1Rj9fduborGExarC",
+                                "sender": config.address,
+                                "attachment": config.paymentAttachment,
+                                "recipient": address,
+				"pay" : "no"
+                        });
+                }
+
 	  }
 
         totalMRT += mrt[address];
@@ -464,8 +502,12 @@ var pay = function() {
 
         html += "<tr><td>" + address + "</td><td>" + 							 	//address column
 				((payments[address]/100000000).toFixed(8)) + "</td><td>" + 	//Waves fee's
-				mrt[address].toFixed(2) + "</td><td>" +                     //MRT
-				"\r\n";
+				mrt[address].toFixed(2) + "</td><td>"                      //MRT
+	
+	if (payout == false) { html += "* NO PAYOUT *" }
+	
+	html += "\r\n";
+
     }	//End for loop
 
     html += "<tr><td><b>Total</b></td><td><b>" + ((totalfees/100000000).toFixed(8)) +
@@ -505,6 +547,8 @@ var pay = function() {
     fs.writeFile(config.filename + config.paymentid + ".log",
 	"total Waves fees: " + (totalfees/100000000).toFixed(8) + " (" + paymentconfigdata.feedistributionpercentage + "%) total MRT: " + totalMRT + "\n"
 	+ "Total blocks forged: " + BlockCount + "\n"
+	+ "NO PAYOUT Waves: " + (nopaywaves/100000000).toFixed(8) + "\n"
+	+ "NO PAYOUT MRT: " +  nopaymrt.toFixed(2) + "\n"
 	+ "Payment ID of batch session: " + config.paymentid + "\n"
 	+ "Payment startblock: " + paymentstartblock + "\n"
 	+ "Payment stopblock: " + paymentstopblock + "\n"
@@ -552,12 +596,10 @@ var pay = function() {
 
 		console.log("\nApparently there's no payment queue file yet. Adding paymentid '" + payid + "' of current batch to queuefile " + payqueuefile);
 		console.log("You can now either start the next collector session, when finished it will automatically be added to the payment queue.");
-                console.log("\nYou can now verify the payment queue with the payment check tool ('start_checker' or 'node checkPayment.js').");
-                console.log("All pending payments are automatically found and checked. It tells you which payment tool has lowest tx-cost.");
-                console.log("This will be the masstransfer tool (masstx.js) for bundled sub-transactions or the massPayment.js for single transactions.");
-                console.log("Probably masstx.js will be most cost efficient. Just run the checker tool and you'll see.\n");
-		console.log("Then execute the actual payments, which transfers the revenue shares to all leasers for all jobs in the")
-		console.log("payment queue. Whenever a job is finished, it is automatically removed from the payment queue file.\n")
+                console.log("Or you can verify the payment queue with the payment check tool ('start_checker' or 'node checkPayment.js').");
+                console.log("All pending payments are automatically found and checked.");
+		console.log("Then execute the actual payments, which transfers the revenue shares to all leasers. Start with 'node masstx'.");
+		console.log("When the pay job is finished, it is automatically removed from the payment queue file.\n")
 
                 payarray = [ payid ];
 
@@ -573,11 +615,11 @@ var pay = function() {
                         console.log("\nCurrently there are no payments pending in the queue.");
                         console.log("Adding paymentid '" + payid + "' to queuefile " + payqueuefile + ". This is the only payment in the queue now :-)\n");
                         console.log("You can now either start the next collector session, when finished it will automatically be added to the payment queue.");
-                        console.log("\nOr you can verify the payment queue with the payment check tool (node checkPaymentsFile.js). All pending payments are");
-                        console.log("automatically found and checked. It tells you which payment tool has lowest tx-cost.");
-			console.log("Probably masstx.js will be most cost efficient. Just run the checker tool and you'll see.\n");
-                	console.log("Then execute the actual payments, which transfers the revenue shares to all leasers for all jobs in the")
-                	console.log("payment queue. Whenever a job is finished, it is automatically removed from the payment queue file.\n")
+                        console.log("Or you can verify the pending payment with the payment check tool, 'node checkPaymentsFile.js'.");
+			console.log("This will only check, not pay!");
+                	console.log("If you are satisfied with the checker results (you probably are), then execute the actual payment with 'node masstx'");
+			console.log("This will transfer the revenue shares to all leasers!")
+                	console.log("When the payment is finished, the job id is automatically removed from the payment queue file.\n")
  
                         payarray = [ payid ]
                 }
@@ -597,6 +639,12 @@ var pay = function() {
                         console.log("\nFound " + payarray.length + " pending payments already in queue. Adding current batch with paymentid " + payid + " to the queue.")
                         payarray.push(payid);
                         console.log("The total queue waiting for payouts is now: " + payarray);
+			console.log("\nTIP")
+			console.log("Before you execute your payments, you can lower the needed transaction costs,");
+			console.log("by running the optimizer tool, './txoptimizer.py'.")
+			console.log("This will merge all pending payments in one larger job!");
+			console.log("Start first the checker tool: './start_checker.sh' or 'node checkPaymentsFile.js'");
+			console.log("Then start the txoptimizer tool: 'txoptimizer.py'\n")
                 }
 
            }

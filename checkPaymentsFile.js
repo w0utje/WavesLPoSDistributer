@@ -127,6 +127,7 @@ function checkpayouts (filename, batchid, jobnr) {
 	var addmessage;
 	var message = "Job " + jobnr + ", batch ID " + batchid + ", payoutfile '" + filename + "'. "
 	payjobcounter++
+	pay = 'no' //key that tells no or yes if the recipient should get payout
 
 	// Read logfile for current batch and get the blocks that were forged
 	function getblocksforged () {
@@ -138,22 +139,38 @@ function checkpayouts (filename, batchid, jobnr) {
 	}
 
 	function constructassetsarray () {
+		
+		yescounter = 0 //counts all transactions with pay = yes
 
 		payments.forEach(function(payment) {		//For every json set { } found, which marks 1 payment
 
+			pay = payment.pay
+			if (pay == undefined) { pay = 'yes' }
+			if (pay == 'yes') { yescounter++ }
        			if (payment.assetId) {			//We found an 'assetId' for current payment (tokens, not WAVES!)
        				if (!assets[payment.assetId]) { //First time found -> not in var assets {} yet
                				assetsFound++;		//Increase var assetFound with 1
                				assets[payment.assetId] = {	//Set token string in asset array
 						batchid: batchid,
-               					amount: payment.amount,	//set amount from payment {} to asset.amount
+               					amount: payment.amount,	//amount key which counts total found
+						nopayamount: 0,
+						payamount: 0,
 						transactions: 1, //set counter on first transaction
                					decimals: 0,
                					name: ''	//name is empty
                				};
-       				} else {			//This 'assetId' was already set in assets array 
-               				assets[payment.assetId].amount += payment.amount;	//Increase the amount with next payment {} amount
-					assets[payment.assetId].transactions++ //increase counter asset transactions
+					if (pay == "no") { //amount key which counts nopayouts
+						assets[payment.assetId].nopayamount = payment.amount
+						assets[payment.assetId].transactions = 0
+					} else { assets[payment.assetId].payamount = payment.amount }  //amount key which counts payouts
+       				} else {	//This 'assetId' was already set in assets array 
+               				assets[payment.assetId].amount += payment.amount; //Increase the total amount
+					if (pay == 'no') { //increase nopayout amount
+							assets[payment.assetId].nopayamount += payment.amount
+					} else {
+						assets[payment.assetId].payamount += payment.amount //increase payout amount
+						assets[payment.assetId].transactions++ //increase counter asset transactions
+					}
        	  			}
        			} else {	// 'assetId' not found in one set {} -> means WAVES transactions
        				if (!assets['Waves']) {		//First time found -> not in var assets {} yet
@@ -161,24 +178,35 @@ function checkpayouts (filename, batchid, jobnr) {
                 			assets['Waves'] = {	//Set Waves string in asset array
 						batchid: batchid,
                     				amount: payment.amount,	//set amount from payment {} to Waves.amount in assets array
+						nopayamount: 0,
+                                                payamount: 0,
 						transactions: 1, //Set counter on first transaction
                     				decimals: 8,
                     				name: 'Waves'	//set name key to 'Waves' in assets array
                 			};
-            			} else {			//Waves bestaat al in assets array
+					if (pay == "no") {
+						assets['Waves'].nopayamount = payment.amount //amount key which counts nopayouts
+						assets['Waves'].transactions = 0
+					} else { assets['Waves'].payamount = payment.amount }  //amount key which counts payouts
+            			} else {	//Waves bestaat al in assets array
                				assets['Waves'].amount += payment.amount;	//Increase the amount with next payment {} amount
-					assets['Waves'].transactions++ //Increase counter Waves transactons
+					if (pay == 'no') {
+						assets['Waves'].nopayamount += payment.amount  //increase nopayout amount
+					} else {
+						assets['Waves'].payamount += payment.amount  //increase payout amount
+						assets['Waves'].transactions++ //Increase counter Waves transactons
+					}
             			}
         		}
 		});	//End forEach
 
-		if ( payments.length == 0 ) {	//Payout file IS empty, no payouts needed
+		if (payments.length == 0 || yescounter == 0) { //Payout file IS empty, no payouts needed
 
 			addmessage = 'Nothing to pay! ' + getblocksforged()
 
 		} else {	//Payout file is NOT empty, let's dig up amount and asset info
 
-			addmessage = payments.length + ' payments. ' + getblocksforged()
+			addmessage = yescounter + ' payments. ' + getblocksforged()
 		  }
 
 		/**
@@ -215,6 +243,9 @@ function checkpayouts (filename, batchid, jobnr) {
 
 		console.log(message + addmessage);
 
+		var nopayoutsum
+		var payoutsum
+
 		addAssetInfo(assets, function() {	//assets is the array filled with the total amounts for all assetIds
 
 			var singletransactions = 0
@@ -227,8 +258,10 @@ function checkpayouts (filename, batchid, jobnr) {
 			for (var assetId in assets) {	//For every asset found in one batch
 
        				var asset = assets[assetId];
-
-				singletransactions += asset.transactions //increase transactioncounter for single transactions
+				nopayoutsum = assets[assetId].nopayamount //total of nopayout fees
+				payoutsum = assets[assetId].payamount //total of payout fees
+				
+				singletransactions += asset.transactions //increase transactioncounter for single transactions (these are real paid txs)
 				masstransfers = Math.ceil(asset.transactions/maxmasstransfertxs) //how many masstransfers for one asset
 				
 				if (masstransfers == 1) { //Only 1 masstransfer needed
@@ -250,13 +283,29 @@ function checkpayouts (filename, batchid, jobnr) {
 				totalmasstransfers += masstransfers
 
 				i++	//Counter to know when we reached the end of the for loop
-				console.log("    " + jobnr + ": " + (asset.amount / Math.pow(10, asset.decimals)) + ' of ' + asset.name + ' will be paid!');		
+				
+				if (nopayoutsum == 0) { //Everyone gets payed	
+					console.log("    " + jobnr + ": " + (asset.amount / Math.pow(10, asset.decimals)) + ' of ' + asset.name + ' will be paid!');		
+				} else { //There are NO PAYOUT addresses
+					console.log("    " + jobnr + ": " + (asset.amount / Math.pow(10, asset.decimals)) + ' of ' + asset.name + ' in total ' +
+						    "(" + (payoutsum / Math.pow(10, asset.decimals)) + " PAY / " + (nopayoutsum / Math.pow(10, asset.decimals)) +
+						    " NO PAY)")
+				}
+				
+
 			
 				if (!assetsumarray[asset.name]) {	//This asset is not in the Array yet
-					assetsumarray[asset.name] = { amount: asset.amount, decimals: asset.decimals }
+					assetsumarray[asset.name] = { amount: asset.amount,
+								      payamount: payoutsum,
+								      nopayamount: nopayoutsum,
+								      decimals: asset.decimals
+					}
+
 				} else {
-					assetsumarray[asset.name].amount += asset.amount	//Asset is found already, increase amount
-				  }
+					assetsumarray[asset.name].amount += asset.amount //Asset is found already, increase amount
+					assetsumarray[asset.name].nopayamount += nopayoutsum,
+					assetsumarray[asset.name].payamount += payoutsum
+				}
 
 				if ( assetsFound  == i ) { //Reached last asset
 					console.log()	//Print empty line after last asset is returned in this  batch
@@ -284,7 +333,13 @@ function checkpayouts (filename, batchid, jobnr) {
 					var i = 0;
 					for (var assetid in assetsumarray) {
 						var asset = assetsumarray[assetid];
-						console.log(" - " + (asset.amount / Math.pow(10, asset.decimals)), assetid + " will be paid!");
+						if (asset.nopayamount == 0) { //Everyone gets paid!
+							console.log(" - " + (asset.amount / Math.pow(10, asset.decimals)), assetid + " will be paid!");
+						} else { //Found some amount which is not paid!
+							console.log(" - " + (asset.amount / Math.pow(10, asset.decimals)), assetid + " in total " +
+								    "(" + (asset.payamount / Math.pow(10, asset.decimals)) + " PAY / " +
+								    (asset.nopayamount / Math.pow(10, asset.decimals)) + " NO PAY)")
+						}
 						i++
 					}
 					console.log('\ntotal blocks: ' + blocks + '\n');
@@ -294,7 +349,7 @@ function checkpayouts (filename, batchid, jobnr) {
 					if ( allbatchmasstxcost < allbatchsinglecost ) {
 						console.log("It's cheapest to do the payouts with masstransfers. You save " +
 							    ((1-allbatchmasstxcost/allbatchsinglecost)*100).toFixed(1) + " percent.")
-						console.log("To do masstransfers, use tool 'node masstx.js'.\n")
+						console.log("Start your masstransfer with 'node masstx'.\n")
 					} else if ( allbatchmasstxcost == allbatchsinglecost ) {
 						console.log("Single transactions and masstransfers incur the same cost. Choose whichever you like;")
 						console.log(" - for single transactions: 'node massPayment.js'")
