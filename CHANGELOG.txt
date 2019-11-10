@@ -54,7 +54,7 @@ Version 2.2
      The change is backwards compatible with older json files, that do not have the 'pay' key.
      All recpients found in the json data without the 'pay' key, will be assumed 'yes'.
      
-  2. Added new tool 'txoptimizier.py' to optimize multiple pending payment jobs
+  2. Added new tool 'txoptimizer.py' to optimize multiple pending payment jobs
      When a collector run has finished, the payment data is written to file,
      waiting in the queue to get payed by the masstx tool.
      However, if you execute more collector runs before you do your payments, you will
