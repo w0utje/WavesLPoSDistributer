@@ -25,6 +25,7 @@
 		"transactionapisuffix" : "/assets/transfer",
 		"masstxapisuffix" : "/assets/masstransfer",
 		"masstransferversion" : "1",
-		"relevantassets" : [ "Waves", "Mrt" ]
+		"relevantassets" : [ "Waves", "Mrt" ],
+		"optimizerdir": "txoptimizer"
 	}
 }
