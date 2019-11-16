@@ -12,6 +12,7 @@ if (fs.existsSync(configfile)) { //configurationfile is found, let's read conten
         toolconfigdata = jsonconfiguration['toolbaseconfig']
         paymentconfigdata = jsonconfiguration['paymentconfig']
 
+
         //define all vars related to the payment settings
         var myquerynode = paymentconfigdata['paymentnode_api']
         var mailto = paymentconfigdata['mail']
@@ -20,6 +21,7 @@ if (fs.existsSync(configfile)) { //configurationfile is found, let's read conten
         var batchinfofile = toolconfigdata['batchinfofile']
         var payqueuefile = toolconfigdata['payqueuefile']
         var payoutfilesprefix = toolconfigdata['payoutfilesprefix']
+
 }
 else {
      console.log("\n Error, configuration file '" + configfile + "' missing.\n"
@@ -33,6 +35,15 @@ var config = {
     apiKey: paymentconfigdata.paymentnode_apikey
 };
 
+if ( paymentconfigdata['payreports'] ) { //payreports keys for report upload is in json file
+	var payreport = paymentconfigdata['payreports']
+} else {
+	var payreport = { 'provider' : '' } //payreport keys not in json file
+	console.log("\n* WARNING:\n" +
+		    "* You have an old config.json file, missing some json data.\n" +
+		    "* You miss nice features to automatically upload your leasing reports to Cloud providers,\n" +
+		    "* or to a webserver folder. Better download the latest configfile from Github.\n")
+}
 const paymentqueuefile = payqueuefile //Queue file with all payment ids to be processed
 const transactiontimeout = parseInt(toolconfigdata.transactiontimeout) //Msecs to wait between every transaction posted
 const paymentsdonedir = toolconfigdata.paymentsdonedir //Where to move files after processing
@@ -41,7 +52,6 @@ const coins = toolconfigdata.relevantassets //Which coins we take into considera
 const transferfee = parseInt(toolconfigdata.txbasefee)
 const masstransferfee = parseInt(toolconfigdata.masstransferpertxfee)
 const masstransferversion = parseInt(toolconfigdata.masstransferversion)
-
 
 // THIS CONST VALUE IS NEEDED WHEN THE PAYMENT PROCESS HALTS OR CRASHES
 // Just change the batchidstart value to the BatchID that was active when the crash occured,
@@ -54,6 +64,94 @@ const crashconfig = {
 
 var newpayqueue = []
 var jobs
+
+//Function to upload the HTML report to a cloud location
+//params: file, filename of file to upload
+//	  batch, payjob from the payqueue
+//	  cb, callback function to run when reached it
+function reportupload(file,batch, cb) {
+	
+	if (payreport.provider != "") {
+		requesturlprefix = payreport.requesturlprefix
+		destination = payreport.destination
+		
+		if (payreport.provider.toLowerCase() == 'aws') {
+
+			var AWS = require('aws-sdk')
+			
+			/*AWS.config.getCredentials(function(err) {
+  				if (err) {
+					console.log(err.stack);
+				// credentials not loaded
+				} else {
+    					console.log("Access key:", AWS.config.credentials.accessKeyId);
+    					console.log("Secret access key:", AWS.config.credentials.secretAccessKey);
+  				}
+			})*/
+			
+			awsregion = payreport.region
+			AWS.config.update({ region : awsregion})
+
+			// Create S3 service object
+			s3 = new AWS.S3({apiVersion: '2006-03-01'});
+			
+			// call S3 to retrieve upload file to specified bucket
+			var uploadParams = { Bucket: destination, Key: '', Body: '', ContentType:'text/html' };
+
+			// Configure the file stream and obtain the upload parameters
+			var fileStream = fs.createReadStream(file);
+			fileStream.on('error', function(err) {
+  				console.log('File Error', err);
+			});
+			uploadParams.Body = fileStream;
+			//var path = require('path');
+			//uploadParams.Key = path.basename(file);
+			uploadParams.Key = parseInt(batch).toString() + '.html'
+			// call S3 to retrieve upload file to specified bucket
+			s3.upload (uploadParams, function (err, data) {
+  				if (err) {
+    					console.log("Error uploading report to AWS! Batch",batch,err);
+  				} if (data) {
+					if (requesturlprefix == "") { //If no requesturl, then use aws default for object
+						requesturlprefix = data.Location
+					} else {
+						if (requesturlprefix[requesturlprefix.length-1] != '/') { requesturlprefix += '/' }
+						requesturlprefix += uploadParams.Key //prefix + filename
+					}
+    					console.log("AWS S3 upload of report done:", data.Location +
+						    "\nReport request url:",requesturlprefix + "\n")
+					cb()
+  				}
+			});
+		} else if (payreport.provider.toLowerCase() == 'local') { //Local folder destination
+
+			if (destination[destination.length-1] != '/') { destination += '/' } //check / existence
+        		if (!fs.existsSync(destination)) { //folder does not exists
+
+                		console.log(" * WARNING:\n" +
+                            		    " * Apparently destination folder '" + destination + "' does not exist.\n" +
+                            		    " * Skipping upload of payreport '" + batch + ".html' to '" + destination + "'\n *" +
+                            		    "\n * Please manually create folder '" + destination + "' and copy" +
+                            		    "\n * the report file '" + file + "' to '" + destination + batch + ".html'\n *" +
+                            		    "\n * You can find the report in '" + paymentsdonedir + "'")
+
+				cb()
+
+        		} else { //destination folder for report exist
+
+                		dstfile = destination + batch + ".html"
+                		fs.copyFile(file, dstfile, (err) => {
+                        		if (err) throw err;
+                        		console.log("Created local copy of report for your leasers:", dstfile +
+                                    		    "\nReport request url:",requesturlprefix + batch + ".html\n");
+					cb()
+                		});
+        		} //END else
+		}
+	} else { //No provider defined, no report upload,  only execute further payments
+		cb()
+	}
+}
 
 //This function rounds a number up to the nearest upper number
 //i.e. number is 230000, upper is 100000 -> 300000
@@ -79,17 +177,18 @@ function roundup(number, upper) {
 */
 function testcases () {
 
-	if ( !fs.existsSync(paymentsdonedir) ) {
-		fs.mkdirSync(paymentsdonedir, 0744) //Create archival DIR
-		getpayqueue(start);
-	}
-	else if ( !fs.existsSync(paymentqueuefile) ) {
+	if ( !fs.existsSync(paymentqueuefile) ) {
 		console.log("Missing file " + paymentqueuefile + "! Run collector session first. Goodbye")
-	}
-	else if ( JSON.parse(fs.readFileSync(paymentqueuefile)).length == 0 ) {
-		console.log("Empty payqueue! Nothing to pay, goodbye :-)")
-	}
-	else {
+		process.exit() //Terminate
+
+	} else if ( JSON.parse(fs.readFileSync(paymentqueuefile)).length == 0 ) {
+                console.log("Empty payqueue! Nothing to pay, goodbye :-)")
+		process.exit() //Terminate
+
+        } else if ( !fs.existsSync(paymentsdonedir) ) {
+		fs.mkdirSync(paymentsdonedir, 0744) //Create archival DIR
+
+	} else { //start program
 		getpayqueue(start);
 	}
 }
@@ -171,14 +270,18 @@ function updatepayqueuefile (array, batchid) {
 
 	jobs-- //Count down everytime a job is done
 	
+	var htmlfile = (config.payoutfileprefix + batchid + ".html") //report file
+
 	if ( batchpaymentarray.length == 0 ) { printline = "\nRemoved batch " + batchid + " from the payqueue and successfully updated file " + paymentqueuefile + "!\n" }
 	else { printline = "\nAll payments done for batch " + batchid + ". Removed from the payqueue and succesfully updated file " + paymentqueuefile + "!\n" }
 
 	array.shift(console.log(printline)) //Strip batchid from array
 
-		fs.writeFile(paymentqueuefile, JSON.stringify(array), {}, function(err) {
-        		if (!err) { } else { console.log("Warning, errors writing payqueue file!\n",err); }
-    		});
+	fs.writeFile(paymentqueuefile, JSON.stringify(array), {}, function(err) {
+        	if (!err) { } else { console.log("Warning, errors writing payqueue file!\n",err); }
+    	});
+	
+	reportupload(htmlfile,batchid, function() { //Upload HTML file to it's destination
 
 		fs.renameSync(config.payoutfileprefix + batchid + ".json", paymentsdonedir + config.payoutfileprefix + batchid + ".json")
 		fs.renameSync(config.payoutfileprefix + batchid + ".html", paymentsdonedir + config.payoutfileprefix + batchid + ".html")
@@ -190,17 +293,18 @@ function updatepayqueuefile (array, batchid) {
 		console.log("  - " + config.payoutfileprefix + batchid + ".log => " + paymentsdonedir + config.payoutfileprefix + batchid + ".log")
 
 		if ( batchpaymentarray.length !== 0 ) {
-			console.log("\nAppended payment masstransaction logs to " + config.payoutfileprefix + batchid + ".log for reference.") }
-
+			console.log("\nAppended payment masstransaction logs to " + config.payoutfileprefix + batchid + ".log for reference.")
+		}
 		console.log("\n======================= batch " + batchid + " all done =======================\n")
-	
+
 	  	if ( jobs == 0 ) { //Processed all jobs in the payqueue
-		        console.log(" Finished payments for all jobs in the payqueue. All done :-)\n")
+			console.log(" Finished payments for all jobs in the payqueue. All done :-)\n")
                         console.log(" If you enjoy this script, Waves or tokens on Waves are welcome as a gift;\n\n" +
-                                    "   - wallet alias: 'donatewaves@plukkie'\n" +
-                                    "   - wallet address: '3PKQKCw6DdqCvuVgKtZMhNtwzf2aTZygPu6'\n\n" +
-                                    " Happy forging!\n")
+                               	    "   - wallet alias: 'donatewaves@plukkie'\n" +
+                               	    "   - wallet address: '3PKQKCw6DdqCvuVgKtZMhNtwzf2aTZygPu6'\n\n" +
+                               	    " Happy forging!\n")
                 }
+	});
 }
 
 /**
@@ -246,7 +350,7 @@ var doPayment = function(payments, counter, batchid, nrofmasstransfers) {
 
 	coins.forEach( function (asset,index) {
 
-		if ( asset in payment ) { //Found relevant coin in payment object
+		if ( asset in payment && payment[asset].length != 0) { //Found relevant coin in payment object
 
 			var assettxs = payment[asset] //Array with all transactions
 			var totaltxs = assettxs.length //Total number of transactions for one asset

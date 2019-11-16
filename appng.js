@@ -4,6 +4,9 @@ const configfile = 'config.json'
 var request = require('sync-request');
 var fs = require('fs');
 
+var date = (new Date())
+date = date.getDate()+"-"+date.getMonth()+"-"+date.getFullYear()
+
 if (fs.existsSync(configfile)) { //configurationfile is found, let's read contents and set variables
 
 	const rawconfiguration = fs.readFileSync(configfile)
@@ -393,6 +396,7 @@ var pay = function() {
     var totalfees =0;
     var nopaywaves = 0
     var nopaymrt = 0
+    var nopayaddresscount = 0
 
     var html = "";
 
@@ -407,9 +411,9 @@ var pay = function() {
 "<body>" +
 
 "<div class=\"container\">" +
-"  <h3>Fee's between blocks " + config.startBlockHeight + " - " + config.endBlock + ", Payout #" + config.paymentid + "</h3>" +
+"  <h3>Fees between blocks " + config.startBlockHeight + " - " + config.endBlock + ", Payout #" + config.paymentid + ", (" + feedistributionpercentage + "%)</h3>" +
 "  <h4>(LPOS address: " + config.address + ")</h4>" +
-"  <h5>29-06-2017: Hi all, again a short update of the fee's earned by the wavesnode 'Plukkieforger'. Greetings!</h5> " +
+"  <h5>[ " + date + " ]: Hi all, again a short update of the fee's earned by the wavesnode 'Plukkieforger'. Greetings!</h5> " +
 "  <h5>You can always contact me by <a href=\"mailto:" + mailto + "\">E-mail</a></h5>" +
 "  <h5>Blocks forged: " + BlockCount + "</h5>" +
 "  <table class=\"table table-striped table-hover\">" +
@@ -423,7 +427,7 @@ var pay = function() {
 "    </thead>" +
 "    <tbody>";
 
-    for (var address in payments) {
+    for (var address in payments) { //Start for all addresses in payments array
         var payment = (payments[address] / Math.pow(10, 8));
 
 	if ( nofeearray.indexOf(address) == -1 ) { //This address will get payed (it's not found in nopay array)
@@ -462,6 +466,7 @@ var pay = function() {
 	} else { //NOPAYOUT address, will not get payed
 
 		payout = false
+		nopayaddresscount ++
 
 		console.log(address + ' marked as NOPAYOUT, will not receive ' + parseFloat(payment).toFixed(8) + ' and ' + parseFloat(mrt[address]).toFixed(2) + ' MRT!')
 
@@ -508,11 +513,17 @@ var pay = function() {
 	
 	html += "\r\n";
 
-    }	//End for loop
+    }	//End for all addresses in payments array
 
-    html += "<tr><td><b>Total</b></td><td><b>" + ((totalfees/100000000).toFixed(8)) +
+    html += "<tr><td><b>Total amount</b></td><td><b>" + ((totalfees/100000000).toFixed(8)) +
 		 "</b></td><td><b>" + totalMRT.toFixed(2) + "</b></td><td><b>" +
 			"\r\n";
+
+    if (nopaywaves != 0) { //Write no payout row
+    	html += "<tr><td><b>No Payout amount (" + nopayaddresscount + " recipients)</b></td><td><b>" + ((nopaywaves/100000000).toFixed(8)) +
+		"</b></td><td><b>" + nopaymrt.toFixed(2) + "</b></td><td><b>" +
+			"\r\n";
+    }
 
     html += "</tbody>" +
 "  </table>" +
@@ -545,13 +556,14 @@ var pay = function() {
    
     // Create logfile with paymentinfo for reference and troubleshooting 
     fs.writeFile(config.filename + config.paymentid + ".log",
-	"total Waves fees: " + (totalfees/100000000).toFixed(8) + " (" + paymentconfigdata.feedistributionpercentage + "%) total MRT: " + totalMRT + "\n"
+	"total Waves fees: " + (totalfees/100000000).toFixed(8) + " total MRT: " + totalMRT + "\n"
 	+ "Total blocks forged: " + BlockCount + "\n"
 	+ "NO PAYOUT Waves: " + (nopaywaves/100000000).toFixed(8) + "\n"
 	+ "NO PAYOUT MRT: " +  nopaymrt.toFixed(2) + "\n"
 	+ "Payment ID of batch session: " + config.paymentid + "\n"
 	+ "Payment startblock: " + paymentstartblock + "\n"
 	+ "Payment stopblock: " + paymentstopblock + "\n"
+	+ "Distribution: " + paymentconfigdata.feedistributionpercentage + "%\n"
 	+ "Following addresses are skipped for payment; \n"
 	+ JSON.stringify(nofeearray) + "\n", function(err) {
    	if (!err) {
@@ -644,7 +656,8 @@ var pay = function() {
 			console.log("by running the optimizer tool, './txoptimizer.py'.")
 			console.log("This will merge all pending payments in one larger job!");
 			console.log("Start first the checker tool: './start_checker.sh' or 'node checkPaymentsFile.js'");
-			console.log("Then start the txoptimizer tool: 'txoptimizer.py'\n")
+			console.log("Then start the txoptimizer tool: 'txoptimizer.py' and see the optimized results!")
+			console.log("To verify you can start checker tool afterwards again :-)\n")
                 }
 
            }
