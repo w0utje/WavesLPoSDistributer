@@ -1,9 +1,10 @@
-# WavesLPoSDistributer          v2.2
+# WavesLPoSDistributer          v2.3
 A revenue distribution tool for Waves nodes and the leasers
 
 Welcome to Plukkies version of the LPoSdistribution script, 'the lazy' version.
 This version enhances the ease of use and creates a 'one stop touch' for the user.
-It also creates extra logging and usefull screen output.
+It also creates extra logging and usefull screen output and has integration with
+Cloud Providers.
 The payout jobs are nicely queued now and don't have to be executed instantly anymore
 after the collector session has been executed.
 
@@ -35,6 +36,15 @@ In release 2.2 a new tool 'txoptimizer.py' was added. This need python3.
 It has been succesfully tested with python 3.6.8 on Ubuntu.
 To install python3 on ubuntu: apt install python3.
 
+Release 2.3 has integrations with Amazon AWS S3 buckets.\
+Install the aws sdk -> npm install aws-sdk from within your WavesLPOSdistributer folder.
+You also need to have an Aws account and have the API access credentials installed on your
+machine where you run this WavesLPOSDistributer.
+NOTE
+This is only needed if you want to store your html reports on S3!\
+See configfile explanation in chapter ## Installation steps: first time users\
+for more info how to set it up.
+
 You can now proceed with the actual scripts installation and configuration.
 Read on with one of the following steps which apply to your setup;
  - Installation steps: first time users
@@ -65,7 +75,13 @@ npm install
     "paystartblock" : "1370000",
     "blockwindowsize" : "5000",
     "nopayoutaddresses" : [ ],
-    "mail" : "<<your email address>>"                 <-- optional value (also remove << and >> chars)
+    "mail" : "<<your email address>>",                 <-- optional value (also remove << and >> chars)
+    "payreports" : {                                   <-- optional
+			"provider" : "",
+			"destination" : "",
+			"region" : "",
+			"requesturlprefix" : ""
+		}
   },
   "toolbaseconfig" : {
     "batchinfofile" : "batchinfo.json",
@@ -176,6 +192,28 @@ Here's a clarification of all key/value pairs;
    Put here optionally your email address. It will be used in an HTML file which is created
    which shows the leasing stats. You can share this with your leasers and so they know how
    to contact you.
+   
+ - "payreports" : {
+          "provider" : "<local> or <aws>",
+			    "destination" : "<name of folder> or <name of an aws s3 bucket>",
+			    "region" : "<aws region>",
+			    "requesturlprefix" : "<wb url prefix of your report destination>"
+          
+   This feature will upload your html report, after masstx.js did the payments. The providers
+   can be a a local folder or an s3 bucket on Amazon AWS.
+   1. Option local folder:
+      - provider -> "local"
+      - destination -> "<path to your destination folder>" , like "/var/home/htdocs/"
+        NOTE: folder should be there and writable.
+      - region -> not used for local, leave blank
+      - requesturlprefix -> url for your consumers, i.e. "https://yourdomain.nl/reports/"
+   2. Option Cloud Provider AWS:
+      - provider -> "AWS"
+      - destination -> "s3 bucket name" , like "wavesleasingreports"
+        NOTE: bucket should be there
+      - region -> Amazon region, like "eu-north-1"
+      - requesturlprefix -> url for your consumers. If leave blank (""), you see the
+        complete Aws 3s path with report name on screen.
  ```
 **toolbaseconfig**  (This part is for application behaviour and core values)
 ```
@@ -286,17 +324,19 @@ NOTE
 If you can't start 'start_collector', check if the script has execute 'x' on it.
 If not add with: ```chmod u+x start_collector.sh```
 
-NOTE
+NOTE\
 The script can consume a serious amount of memory and exits with errors during it's run.
 Therefore I've put 'start_collector.sh' script as starter which runs 'node appng.js' with
 some memory optimized settings.
 For me it works with tweaks to 65KB of stack memory and 8GB of available RAM. So use 'start_collector.sh'
-if you run into problems and tweak to your available RAM. If it keeps on exitting, then shrink the block
-batchsize that are collected during one batch.
+if you run into problems and tweak to your available RAM.\
+If it keeps on exitting, then shrink the block batchsize that are collected during one batch.\
 This way multiple smaller batchsizes will be collected and consume less memory.
 To decrease the initial batchsize, edit file config.json and set "blockwindowsize" smaller.
 With smaller collector batches, you get multiple pending payments in the payment queue.
 These multiple payments jobs can be merged by running the 'txoptimizer.py' tool.
+Txoptimizer.py merges all pending payment jobs into one larger job. It a wonderfull way
+to collect while you don't have much resources on your machine.
 
 NOTE
 To run the collector tool every night @1 AM, edit /etc/crontab and put in following line;
