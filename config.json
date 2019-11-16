@@ -11,7 +11,13 @@
 		"paystartblock" : "1370000",
 		"blockwindowsize" : "5000",
 		"nopayoutaddresses" : [ ],
-		"mail" : "<<your email address>>"
+		"mail" : "<<your email address>>",
+		"payreports" : {
+			"provider" : "",
+			"destination" : "",
+			"region" : "",
+			"requesturlprefix" : ""
+		}
 	},
 	"toolbaseconfig" : {
 		"batchinfofile" : "batchinfo.json",
