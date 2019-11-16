@@ -46,6 +46,7 @@ This version introduces some nice enhancements and Cloud integration!
   - CHANGELOG.txt
   - README.md
   - config.json
+  - txoptimizer.py
 
 Version 2.2
 -----------
