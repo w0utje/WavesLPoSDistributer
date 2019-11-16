@@ -20,6 +20,33 @@
  *
 /* =====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES===WAVES====WAVES====
 
+Version 2.3
+-----------
+- date 16 november 2019
+
+- For a fresh install, please refer to README.md for all necessary steps to get you up and running.
+  It will take you about 1 hour to set parameters and get you started!
+
+This version introduces some nice enhancements and Cloud integration!
+
+- added automatic html report upload to an AWS s3 bucket or a local file destination.
+  This way you can present your reports automatically to your users.
+  See README.md for details how to setup the config.json values
+  
+- html report enhancements;
+  - The reports now shows the date when it was created by the appng tool.
+  - now shows total of no payout recipients and amounts not payed
+  - The fee sharing percentage is visible on top of the reports
+
+- logfiles extended with fee sharing percentage
+
+- Files updated
+  - appng.js
+  - masstx.js
+  - CHANGELOG.txt
+  - README.md
+  - config.json
+
 Version 2.2
 -----------
 - date 10 november 2019
