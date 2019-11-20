@@ -21,7 +21,6 @@ import urllib.request, urllib.parse, urllib.error
 import time
 import sys
 import os
-import bs4
 import datetime
 from shutil import copyfile
 
