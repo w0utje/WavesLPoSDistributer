@@ -20,6 +20,23 @@
  *
 /* =====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES===WAVES====WAVES====
 
+Version 2.3.2
+-------------
+- date 24 november 2019
+
+- checkPaymentsFile.js now notifies when it is usefull to use txoptimizer.py tool before payment
+- masstx.js now is protected against abormal termination. It will notify when started next time
+- README.md is updated with a full automatic crontab to collect, validate, optimize and pay.
+  See README.md for details.
+
+- Files updated
+  - masstx.js
+  - CHANGELOG.txt
+  - README.md
+  - checkPaymentsFile.js
+
+Enjoy!
+
 Version 2.3
 -----------
 - date 16 november 2019
