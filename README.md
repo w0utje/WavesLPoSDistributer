@@ -454,6 +454,25 @@ and the the checks every week and the payout just once a month or whenever you f
 that's all fine. It also depends on the frequency of blockhits for your node and the blockwindows size
 you configure. It's all up to you and it doesn't bite one another.
 
+## A fully automated LPOS cycle
+Below example is a fully automated LPOS cycle, which I use myself on a Linux sysem. It logs the cronjob tasks,\
+with data and time added. It automatically collects, pending payment validation, merges with Txoptimizer and execute payment.
+Everything is logged in home 'folder ~/log/'. These are the scheduled tasks;
+- collect every night 45mins after 23.00 the forged block stats with appng.js (start_collector.sh)
+- checks pending payments 5 minutes BEFORE txoptimizer kicks off (for validation in case of doubts or problems)
+- merge all pending jobs first day of month @01.00 at night with txoptimizer.py
+- checks pending payments 5 minutes AFTER txoptimizer kicks off
+- execute payment first day of the month @13.00 in the afternoon (node masstx)
+```
+# m h  dom mon dow   command
+# m h  dom mon dow   command
+45 23 * * * cd /home/plukkie/WavesLPoSDistributer/ && ./start_collector.sh > ~/log/start_collector.sh-`date +\%d-\%m-\%Y_\%T`.log 2>&1
+55 00 1 * * cd /home/plukkie/WavesLPoSDistributer/ && ./start_checker.sh > ~/log/start_checker.sh-`date +\%d-\%m-\%Y_\%T`.log 2>&1
+00 01 1 * * cd /home/plukkie/WavesLPoSDistributer/ && ./txoptimizer.py > ~/log/txoptimizer.py-`date +\%d-\%m-\%Y_\%T`.log 2>&1
+05 01 1 * * cd /home/plukkie/WavesLPoSDistributer/ && ./start_checker.sh > ~/log/start_checker.sh-`date +\%d-\%m-\%Y_\%T`.log 2>&1
+0  13 1 * * cd /home/plukkie/WavesLPoSDistributer/ && node masstx.js > ~/log/masstx.js-`date +\%d-\%m-\%Y_\%T`.log 2>&1
+```
+With this setup, everything is done automatically and there's a good archive for logging.
 
 ## Airdrops
 Payments for airdrops could be calculated by using the _airdrop.js_ script. Configuration works pretty much the same way as for the other scripts:
