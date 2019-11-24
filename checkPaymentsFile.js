@@ -358,6 +358,15 @@ function checkpayouts (filename, batchid, jobnr) {
 						console.log("Single transactions are cheapest to do the payments.")
 						console.log("To do single transactions, use tool 'node massPayment.js'\n")
 					}
+					if ( payjobs >= 2 ) {
+						console.log("\n REMARK:\n" +
+							    " Found '" + payjobs + "' payjobs in the queue.\n" +
+							    " Consider executing tool './txoptimizer.py' first, before you do your payments.\n" +
+							    " The optimizer tool will merge all the pending payjobs into one larger payjob.\n" +
+							    " This will save you on transaction costs!! ;-)\n" +
+							    " To optimize, just type: ./txoptimizer.py\n" +
+							    " When finished, you can do the payment: node masstx\n")
+					}
 				  }
 			}, 150);
 		} 

@@ -3,6 +3,7 @@ var fs = require('fs');
 var request = require('request');
 
 const configfile = 'config.json'
+const masstxrunfile = 'masstx.run'
 
 if (fs.existsSync(configfile)) { //configurationfile is found, let's read contents and set variables
 
@@ -181,14 +182,23 @@ function testcases () {
 		console.log("Missing file " + paymentqueuefile + "! Run collector session first. Goodbye")
 		process.exit() //Terminate
 
+	} else if ( fs.existsSync(masstxrunfile) ) {
+		console.log("\nALERT:\n" +
+			    "Found masstx interruptionfile. Apparently masstx was interupted abnormally last time!\n" +
+			    "Normally if payments with masstx run 100% fine, this alert should not be given.\n" +
+			    "Check your logs and if everything is fine, delete the crashfile: '" + masstxrunfile + "'\n" +
+			    "\nGoodbye now!\n")
+		process.exit() //Terminate
+
 	} else if ( JSON.parse(fs.readFileSync(paymentqueuefile)).length == 0 ) {
                 console.log("Empty payqueue! Nothing to pay, goodbye :-)")
 		process.exit() //Terminate
 
-        } else if ( !fs.existsSync(paymentsdonedir) ) {
-		fs.mkdirSync(paymentsdonedir, 0744) //Create archival DIR
-
 	} else { //start program
+		
+		fs.closeSync(fs.openSync(masstxrunfile, 'w'))
+		if ( !fs.existsSync(paymentsdonedir) ) { fs.mkdirSync(paymentsdonedir, 0744) }
+
 		getpayqueue(start);
 	}
 }
@@ -303,6 +313,14 @@ function updatepayqueuefile (array, batchid) {
                                	    "   - wallet alias: 'donatewaves@plukkie'\n" +
                                	    "   - wallet address: '3PKQKCw6DdqCvuVgKtZMhNtwzf2aTZygPu6'\n\n" +
                                	    " Happy forging!\n")
+
+			fs.unlink(masstxrunfile, (err) => { //All done, remove run file which is checked during startup
+  				if (err) {
+    					console.error(err)
+    					return
+  				}
+
+			})
                 }
 	});
 }
