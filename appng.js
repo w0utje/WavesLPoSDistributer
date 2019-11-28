@@ -1,11 +1,21 @@
 
 const configfile = 'config.json'
+const appngrunfile = 'appng.run' 
 
 var request = require('sync-request');
 var fs = require('fs');
 
 var date = (new Date())
 date = date.getDate()+"-"+date.getMonth()+"-"+date.getFullYear()
+
+if ( fs.existsSync(appngrunfile) ) {
+	console.log("\nALERT:\n" +
+                    "Found ppng interruptionfile. Apparently appng was interupted abnormally last time!\n" +
+                    "Normally if collector sessions run 100% fine, this alert should not be given.\n" +
+                    "Check your logs and if everything is fine, delete the crashfile: '" + appngrunfile + "'\n" +
+                    "\nGoodbye now!\n")
+        process.exit() //Terminate
+} else { fs.closeSync(fs.openSync(appngrunfile, 'w')) }
 
 if (fs.existsSync(configfile)) { //configurationfile is found, let's read contents and set variables
 
@@ -65,7 +75,15 @@ if (fs.existsSync(batchinfofile)) {
 	let blocksleft = paymentstopblock - lastblockheight
         console.log("\n Current blockheight is " + lastblockheight + ". Waiting to reach " + paymentstopblock + " for next collector round.")
         console.log(" This is approximaly in ~" + Math.round((blocksleft)/60) + " hrs (" + (Math.round((blocksleft/60/24)*100))/100 + " days).\n")
+	
+	fs.unlink(appngrunfile, (err) => { //All done, remove run file which is checked during startup
+		if (err) {
+			console.error(err)
+                        return
+                }
+        })
         return;
+
    } else { var backupbatchinfo = fs.writeFileSync(batchinfofile + ".bak",fs.readFileSync(batchinfofile)) }  //Create backup of batchdatafile
 
 } 
@@ -687,7 +705,13 @@ var pay = function() {
 		} else {
 			console.log("Batchinfo for next payment round is updated in file " + batchinfofile + "!");
 			console.log();
-	  	  }
+			fs.unlink(appngrunfile, (err) => { //All done, remove run file which is checked during startup
+                		if (err) {
+                        		console.error(err)
+                        		return
+                		}
+        		})
+	  	}
     	});
     };
 
