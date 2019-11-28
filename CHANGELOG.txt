@@ -20,6 +20,20 @@
  *
 /* =====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES===WAVES====WAVES====
 
+Version 2.3.3
+-------------
+- date 28 november 2019
+
+- appng and masstx now create a .run file at start. At succesfull termination files are deleted by the tools
+  At startup the tools check existence of the runtime locks and alert that they existed abnormally.
+
+- Files updated
+  - appng.js
+  - masstx.js
+  - CHANGELOG.txt
+  
+Enjoy!
+
 Version 2.3.2
 -------------
 - date 24 november 2019
