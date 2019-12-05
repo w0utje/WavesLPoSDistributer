@@ -1,4 +1,4 @@
-# WavesLPoSDistributer          v2.3
+# WavesLPoSDistributer          v2.3.4
 A revenue distribution tool for Waves nodes and the leasers
 
 Welcome to Plukkies version of the LPoSdistribution script, 'the lazy' version.
@@ -67,6 +67,7 @@ npm install
     "paymentnode_api" : "http://localhost:6869",
     "paymentnode_apikey" : "<<your api key here>>",      <-- mandatory value (also remove << and >> chars) 
     "querynode_api" : "http://localhost:6869",
+    "nodename" : "<your node name>",
     "feedistributionpercentage" : "90",
     "mrtperblock" : "0",
     "leasewallet" : "<<your leasewallet here>>",      <-- mandatory value (also remove << and >> chars)
@@ -81,6 +82,11 @@ npm install
 			"destination" : "",
 			"region" : "",
 			"requesturlprefix" : ""
+		},
+    "socialmedia" : {                                  <-- optional
+			"provider" : "",
+			"destination" : "",
+			"region" : ""
 		}
   },
   "toolbaseconfig" : {
@@ -123,6 +129,9 @@ Here's a clarification of all key/value pairs;
    This is the node (name or ip address) and tcp port of the API server where you run your queries to.
    If you run the LPOSdistributer scripts on your forging node itself, this will be the default (localhost).
    If you run the script on another host, then you use the external ip address of your forging node here.
+ 
+ - "nodename"
+   This is a textual name identifying your node. It's just a description used in some logging
  
  - "feedistributionpercentage"
    How many percent of the transaction fees in your forged blocks, are you willing to share with
@@ -214,6 +223,12 @@ Here's a clarification of all key/value pairs;
       - region -> Amazon region, like "eu-north-1"
       - requesturlprefix -> url for your consumers. If leave blank (""), you see the
         complete Aws 3s path with report name on screen.
+  
+  - "socialmedia" : {  SEE descriptions at "payreports"
+	"provider" : "",
+	"destination" : "",
+	"region" : ""
+	}
  ```
 **toolbaseconfig**  (This part is for application behaviour and core values)
 ```
