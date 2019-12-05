@@ -36,6 +36,7 @@ Version 2.3.4
   - masstx.js
   - CHANGELOG.txt
   - README.md
+  - config.json
 
 Version 2.3.3
 -------------
