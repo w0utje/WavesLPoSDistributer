@@ -1,9 +1,12 @@
 
 var fs = require('fs');
 var request = require('request');
+const readline = require('readline');
 
 const configfile = 'config.json'
 const masstxrunfile = 'masstx.run'
+const forgedblockstext = "blocks forged:"
+const distributiontext = "Distribution:"
 
 if (fs.existsSync(configfile)) { //configurationfile is found, let's read contents and set variables
 
@@ -17,11 +20,14 @@ if (fs.existsSync(configfile)) { //configurationfile is found, let's read conten
         //define all vars related to the payment settings
         var myquerynode = paymentconfigdata['paymentnode_api']
         var mailto = paymentconfigdata['mail']
+	var sm = paymentconfigdata['socialmedia']
 
         //define all vars related to the tool settings
         var batchinfofile = toolconfigdata['batchinfofile']
         var payqueuefile = toolconfigdata['payqueuefile']
         var payoutfilesprefix = toolconfigdata['payoutfilesprefix']
+	var socialmediafile = toolconfigdata['socialmediafile']
+	var nodename = paymentconfigdata['nodename']
 
 }
 else {
@@ -65,13 +71,113 @@ const crashconfig = {
 
 var newpayqueue = []
 var jobs
+var reporturlarray = []
+var blocks = 0 //The sum of total nr. of forged blocks of all payjobs 
+var number = 0 //The average distribution of fee sharing
+var nonzerojobs //Number of nonzero payjobs in queue 
+var totalwaves = 0
+var roundedwaves = 0
+var timestamp = new Date()
+var mydate = ("0" + timestamp.getDate()).slice(-2) + "-" + ("0" + (timestamp.getMonth()+1)).slice(-2) + "-" + timestamp.getFullYear()
+
+//Function to write the social media update message
+//to a file. This message can be picked up by another
+//program to send to i.e. Telegram or twitter
+function socialmediamessage( cb ) {
+	
+	var averagedist = number/nonzerojobs  //average % distribution share of all jobs
+	var text = ""
+
+	text =	"Dear Waves leasers," +
+                "\n\nPeriodic payments have been done again." +
+                "\nForged " + blocks + " blocks. Distributed " + roundedwaves + " Waves (" + averagedist.toString() + "%)" +
+                "\n\nThe report can be consulted here:"
+
+	reporturlarray.forEach( function (item,index) {
+		text += "\n" + item
+	})
+
+	text +=	"\n\nThank you all for leasing to node " + nodename + "!" +
+		"\n\n" + mydate + " - Enjoy the payday!" +
+		"\n"
+
+	fs.writeFile(mydate + "-" + socialmediafile, text, function(err) {
+		if(err) {
+			return console.log(err);
+    		} else { cb() }
+
+	}) //End writefile
+}
+
+function storesocialmediamessage (file) {
+
+	var provider = sm.provider.toLowerCase()
+	var target = sm.destination
+	var region = sm.region
+
+	if ( provider == 'aws' ) { //upload to aws bucket
+
+		var AWS = require('aws-sdk')
+		AWS.config.update({ region : awsregion})
+                s3 = new AWS.S3({apiVersion: '2006-03-01'}); // Create S3 service object
+                var uploadParams = { Bucket: target, Key: '', Body: '', ContentType:'text/html' };
+		var fileStream = fs.createReadStream(file);
+                fileStream.on('error', function(err) {
+                	console.log('File Error', err)
+                })
+                uploadParams.Body = fileStream
+                uploadParams.Key = file
+
+		s3.upload (uploadParams, function (err, data) {
+			
+			if (err) {
+                        	console.log("Error uploading to AWS! file:",file,err);
+                        }
+			if (data) { 
+				fs.unlink(file, (err) => { //remove file
+                                        if (err) {
+                                                console.error(err)
+                                        }
+                                })
+			}
+		})
+	}
+	else if ( provider == 'local' ) { //upload to local folder
+
+		if ( target[target.length-1] != '/' ) { target += '/' } //check / existence
+
+		if (!fs.existsSync(target)) { //folder does not exist
+			
+			console.log(" * WARNING:\n" +
+                                    " * Apparently destination folder '" + target + "' does not exist.\n" +
+                                    " * Skipping upload of social media file '" + file + "' to folder '" + target + "'\n *" +
+                                    "\n * Please manually create folder '" + target + "' and copy" +
+                                    "\n * the social media file '" + file + "' to folder '" + target + "'\n *" +
+                                    "\n * You can find the social media file in '" + process.cwd() + "/\n" )
+
+		} else { //local folder exists
+
+			dstfile = target + file
+                        fs.copyFile(file, dstfile, (err) => {
+                        	if (err) { throw err }
+				else {
+					fs.unlink(file, (err) => { //remove file
+                                        	if (err) {
+                                                	console.error(err)
+                                        	}
+                                	})
+				}
+                        })
+		}
+	}
+}
 
 //Function to upload the HTML report to a cloud location
 //params: file, filename of file to upload
 //	  batch, payjob from the payqueue
 //	  cb, callback function to run when reached it
 function reportupload(file,batch, cb) {
-	
+
 	if (payreport.provider != "") {
 		requesturlprefix = payreport.requesturlprefix
 		destination = payreport.destination
@@ -121,6 +227,9 @@ function reportupload(file,batch, cb) {
 					}
     					console.log("AWS S3 upload of report done:", data.Location +
 						    "\nReport request url:",requesturlprefix + "\n")
+
+					reporturlarray.push(requesturlprefix)
+					requesturlprefix = "" //reset value is needed
 					cb()
   				}
 			});
@@ -217,6 +326,34 @@ function getnonemptybatches (batchid) {
 	return !batchpaymentarray.length == 0 
 }
 
+/* Function to collect all some stats from the logfiles
+ * @param
+ * - logfile: logfile to collect forged blocks
+ */
+function collectlogfileitems(readfile) {
+
+	const readInterface = readline.createInterface ({
+		input: fs.createReadStream(readfile),
+                //output: process.stdout,
+                //console: false
+        });
+
+        readInterface.on('line', function(line) {
+
+		if ( line.indexOf(forgedblockstext) != -1 ) {
+
+			blocks += parseInt(line.slice(line.indexOf(':')+1))
+
+                }
+		if ( line.indexOf(distributiontext) != -1 ) {
+			
+			dist = line.slice(line.indexOf(':')+1)
+			number += parseInt(dist.substring(0, dist.length - 1))
+		}
+        });
+}
+
+
 /*
 ** Method to collect all payouts per batch, read from the payoutfile
 ** It cycles through the paymentqueue and executes the myfunction,
@@ -239,10 +376,15 @@ function getpayqueue (myfunction) {
 	var txdelay = 0
 	var timeoutarray = [];
 	timeoutarray[0] = 0;
+	nonzerojobs = cleanpayqueuearray.length
 
 	cleanpayqueuearray.forEach ( function ( batchid, index ) {  //remark: index in array starts at 0!
 
                 payoutfilename = config.payoutfileprefix + batchid + '.json'
+		logfilename = config.payoutfileprefix + batchid + '.log'
+
+		collectlogfileitems(logfilename)
+
 		batchpaymentarray = JSON.parse(fs.readFileSync(payoutfilename),toString())	//All transaction details current batch
 		var wavestransactions = 0
 		var mrttransactions = 0
@@ -308,19 +450,31 @@ function updatepayqueuefile (array, batchid) {
 		console.log("\n======================= batch " + batchid + " all done =======================\n")
 
 	  	if ( jobs == 0 ) { //Processed all jobs in the payqueue
-			console.log(" Finished payments for all jobs in the payqueue. All done :-)\n")
+			
+			socialmediamessage( function() { //Create messagefile to be picked up by your favorite social media poster
+
+			if ( sm['provider'] != "" ) { //upload socialmediafile to provider
+
+				storesocialmediamessage( mydate + "-" + socialmediafile )
+
+			}
+			})
+			console.log(" Finished payments for all jobs in the payqueue. All done :-)")
+			console.log(" Saved message file to be picked up by your social media updater! (" +
+                     		      mydate + "-" + socialmediafile + ")\n" )
                         console.log(" If you enjoy this script, Waves or tokens on Waves are welcome as a gift;\n\n" +
                                	    "   - wallet alias: 'donatewaves@plukkie'\n" +
                                	    "   - wallet address: '3PKQKCw6DdqCvuVgKtZMhNtwzf2aTZygPu6'\n\n" +
                                	    " Happy forging!\n")
 
-			fs.unlink(masstxrunfile, (err) => { //All done, remove run file which is checked during startup
-  				if (err) {
-    					console.error(err)
-    					return
-  				}
-
-			})
+			if (fs.existsSync(masstxrunfile)) {
+				fs.unlink(masstxrunfile, (err) => { //All done, remove run file which is checked during startup
+  					if (err) {
+    						console.error(err)
+    						return
+  					}
+				})
+			}
                 }
 	});
 }
@@ -401,7 +555,11 @@ var doPayment = function(payments, counter, batchid, nrofmasstransfers) {
 
 				assettxs.forEach(function (asset) { assetamount += asset.amount }) //How much fees total for an asset
 
-				if ( asset == 'Waves' ) { var text = "fee rewards" } else { var text = asset }
+				if ( asset == 'Waves' ) {
+					var text = "fee rewards"
+					totalwaves += assetamount/Math.pow(10,decimalpts) 
+					roundedwaves = Math.round(totalwaves * Math.pow(10,decimalpts)) / Math.pow(10,decimalpts)
+				} else { var text = asset }
 
 				logmessage = "[BatchID " + batchid + "] Found " + totaltxs + " '" + asset + "' transactions, total " + assetamount/Math.pow(10,decimalpts) +
                                             " " + text + ", will do " + masstransfers + " masstransfers."
@@ -471,6 +629,7 @@ var doPayment = function(payments, counter, batchid, nrofmasstransfers) {
 												  "\nIf you enjoy this script, gifts are welcome at alias " +
 											    	  "'donatewaves@plukkie'\n\n")
 
+										
 										updatepayqueuefile(newpayqueue,batchid)
 									}
                                                 		}
