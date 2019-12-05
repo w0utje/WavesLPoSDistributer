@@ -20,6 +20,23 @@
  *
 /* =====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES===WAVES====WAVES====
 
+Version 2.3.4
+-------------
+- date 05 december 2019
+
+- After payments have been executed by masstx tool, it creates a socialmedia update file.
+  This is a summary of the payments, forged blocks and the url where to pickup the html report.
+  The file can be used by other tools to post on media like facebook, twitter or
+  telegram.
+- The social media file can be copied to a local folder or to Cloud provider AWS.
+  The settings you need to fill out in the config.json file.
+  See README file for explanation
+
+- Files updated
+  - masstx.js
+  - CHANGELOG.txt
+  - README.md
+
 Version 2.3.3
 -------------
 - date 28 november 2019
