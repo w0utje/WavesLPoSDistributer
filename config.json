@@ -3,6 +3,7 @@
 		"paymentnode_api" : "http://localhost:6869",
 		"paymentnode_apikey" : "<<your api key here>>",
 		"querynode_api" : "http://localhost:6869",
+		"nodename" : "my node",
 		"feedistributionpercentage" : "90",
 		"mrtperblock" : "0",
 		"leasewallet" : "<<your leasewallet here>>",
@@ -17,11 +18,17 @@
 			"destination" : "",
 			"region" : "",
 			"requesturlprefix" : ""
+		},
+		"socialmedia" : {
+			"provider" : "",
+			"destination" : "",
+			"region" : ""
 		}
 	},
 	"toolbaseconfig" : {
 		"batchinfofile" : "batchinfo.json",
 		"payqueuefile" : "payqueue.dat",
+		"socialmediafile" : "socialmedia.txt",
 		"payoutfilesprefix" : "wavesleaserpayouts",
 		"paymentsdonedir" : "paymentsDone/",
 		"txbasefee" : "100000",
