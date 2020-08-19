@@ -75,8 +75,10 @@ var reporturlarray = []
 var blocks = 0 //The sum of total nr. of forged blocks of all payjobs 
 var number = 0 //The average distribution of fee sharing
 var nonzerojobs //Number of nonzero payjobs in queue 
-var totalwaves = 0
-var roundedwaves = 0
+var totalwaves = 0 //total waves amount all batches for pay is "yes"
+var totalwavesamount = 0 //total amount of waves all batches
+var totalyesnowaves = 0 //total forged waves all batches
+var roundedwaves = 0 //total waves all batches for pay is "yes"
 var timestamp = new Date()
 var mydate = ("0" + timestamp.getDate()).slice(-2) + "-" + ("0" + (timestamp.getMonth()+1)).slice(-2) + "-" + timestamp.getFullYear()
 
@@ -87,10 +89,10 @@ function socialmediamessage( cb ) {
 	
 	var averagedist = number/nonzerojobs  //average % distribution share of all jobs
 	var text = ""
-
+	
 	text =	"Dear Waves leasers," +
                 "\n\nPeriodic payments have been done again." +
-                "\nForged " + blocks + " blocks. Distributed " + roundedwaves + " Waves (" + averagedist.toString() + "%)" +
+                "\nForged " + blocks + " blocks [ " + totalyesnowaves + " Waves (" + averagedist.toString() + "% share) ]" +
                 "\n\nThe report can be consulted here:"
 
 	reporturlarray.forEach( function (item,index) {
@@ -519,6 +521,9 @@ var doPayment = function(payments, counter, batchid, nrofmasstransfers) {
         delayarray[0] = 0 //timeout for first asset will be zero
 
 	masstransferobject(payments, function(cb) { payment = cb })      //VAR to construct masstransfer array, callback array with all transactions
+	//console.log(payment)
+	totalyesnowaves = parseInt(payment['Common']['Wavestotalamount'])/Math.pow(10,parseInt(payment['Common']['Wavespoints']))
+	//console.log("total waves amount forged :",totalyesnowaves)
 
 	coins.forEach( function (asset,index) {
 
@@ -650,12 +655,13 @@ var masstransferobject = function (paymentarray, cb) {
 	var waves = 'Waves'
 	var mrt = 'Mrt'
 	var common = 'Common'
-	var wavesamount = 0
+	var wavesdistamount = 0
 	var payout
 
 	transfers[common] = {}
 	transfers[waves] = []	//empty array where we will push waves recipients and amounts
 	transfers[mrt] = []	//empty array where we will push mrt recipients and amounts
+	transfers[common].Wavespoints = 8
 
 	paymentarray.forEach (function(asset, index) {
 
@@ -669,9 +675,16 @@ var masstransferobject = function (paymentarray, cb) {
 			var wavesdata = {	"recipient" : asset.recipient,
 						"amount" : asset.amount }
 
-			wavesamount += asset.amount
-			transfers[common].Wavesamount = wavesamount
+			wavesdistamount += asset.amount
+			totalwavesamount += asset.amount
+			transfers[common].Wavesdistamount = wavesdistamount
+			transfers[common].Wavestotalamount = totalwavesamount
 			transfers[waves].push(wavesdata)
+
+		} else if ( !asset.assetId && payout == 'no' ) { //No assetId means found Waves transaction
+
+			totalwavesamount += asset.amount
+			transfers[common].Wavestotalamount = totalwavesamount
 
 		} else if ( asset.assetId && payout == 'yes' ) { //Found Mrt transaction
 			
