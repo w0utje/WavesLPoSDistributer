@@ -187,21 +187,29 @@ def preparehtml():
     startblocktext = "Payment startblock:"
     stopblocktext = "Payment stopblock:"
     distributiontext = "Distribution:"
+    blockrewardtext = "Blockreward sharing:"
     blocks = 0 #counter for forged blocks
     nopayaddresscount = 0 #counter for addresses not to get paid
     distpercentarray = {}
+    blockrewardpercentarray = {}
     reversedistpercentarray = {} #used to count if all the jobs have same distribution %
+    reversedblockrewardpercentarray = {} #used to count if all the jobs have same blockreward distribution %
     distributepercentage = 'unknown' #If distribution tag not found in logfile, I must use unknown value to deselect
+    blockrewardpercentage = 'unknown' #If blockreward sharing tag not found in logfile, I must use unknown value to deselect
 
     for job in datafilelist: #cycle through array with all filenames
         logfile = payoutfileprefix + job + payfile_exts[2] #select only .log file
         logdata = open(logfile,'r') #read file
         distpercentarray[job] = distributepercentage
+        blockrewardpercentarray[job] = blockrewardpercentage
 
         for line in logdata: #This loop is to get the startblock of first job, stopblock of last job and #blocks forged
             if distributiontext in line:
                 distribution = int(line[len(distributiontext):(len(line)-2)]) #Read percentage number from line 
                 distpercentarray[job] = distribution
+            if blockrewardtext in line:
+                rewardshare = int(line[len(blockrewardtext):(len(line)-2)]) #Read percentage number from  line
+                blockrewardpercentarray[job] = rewardshare
             if forgedblockstext in line: #find number of forged blocks
                 startindex = line.index(forgedblockstext) + len(forgedblockstext)
                 blocks += int(line[startindex:])
@@ -219,6 +227,13 @@ def preparehtml():
     #if all distribution percentages and value is not unknown, then set % value
     if (len(reversedistpercentarray) == 1 and list(reversedistpercentarray.keys())[0] != distributepercentage):
         distributepercentage = list(reversedistpercentarray.keys())[0]
+    
+    for key, value in blockrewardpercentarray.items(): #create reverse array to check if all blockreward distribution share is same for all jobs
+        reversedblockrewardpercentarray.setdefault(value, set()).add(key)
+    
+    #if all distribution percentages and value is not unknown, then set % value
+    if (len(reversedblockrewardpercentarray) == 1 and list(reversedblockrewardpercentarray.keys())[0] != blockrewardpercentage):
+        blockrewardpercentage = list(reversedblockrewardpercentarray.keys())[0]
  
     leasers = str(len(newjobstats[2]))
     date = (datetime.datetime.now()).strftime("%d-%m-%Y")
@@ -235,7 +250,8 @@ def preparehtml():
             "<div class=\"container\">" +\
             "  <h3>Fees between blocks " + str(startblock) + " - " + str(stopblock) + ", Payout #" + str(firstjobid)
    
-    if (distributepercentage != 'unknown'): html += ", ( " + str(distributepercentage) + "% )"
+    if (distributepercentage != 'unknown'): html += ", ( Fees " + str(distributepercentage) + "% )"
+    if (blockrewardpercentage != 'unknown'): html += " / ( Blockrewards " + str(blockrewardpercentage) + "% )"
     
     html += "</h3>" +\
             "  <h4>(LPOS address: " + str(nodewallet) + ")</h4>" +\
@@ -352,7 +368,7 @@ def preparehtml():
     htmlfile = open(filename, 'w') #write html to file
     htmlfile.write(html)
     htmlfile.close()
-    return blocks,startblock,stopblock,leasers,distributepercentage,distributiontext,forgedblockstext,startblocktext,stopblocktext
+    return blocks,startblock,stopblock,leasers,distributepercentage,blockrewardpercentage,distributiontext,blockrewardtext,forgedblockstext,startblocktext,stopblocktext
 
 #Function to do some filechecking and preproc before we can start
 def prechecks():
@@ -442,6 +458,7 @@ def writelogfile(): #function that writes new logfile for first job
     textblock += "\n" + stopblocktext + " " + str(int(stopblock))
     
     if (distributepercentage != 'unknown'): textblock += "\n" + distributiontext + " " + str(distributepercentage) + "%"
+    if (blockrewardpercentage != 'unknown'): textblock += "\n" + blockrewardtext + " " + str(blockrewardpercentage) + "%"
 
     textblock += "\nFollowing addresses are skipped for payment;"
 
@@ -479,7 +496,7 @@ with open(payqueuefile, "r") as json_file:   # read the queue file with pending 
     payqueuelist = json.load(json_file)
     payjobs = len(payqueuelist)
     if payjobs <= 1:
-        print("Checked payment queue...found",payjobs, "pending jobs. Txoptimizer needs => 2 payjobs ;-)")
+        print("Checked payment queue...found",payjobs, "pending jobs. Txoptimizer needs at least 2 payjobs to optimize ;-)")
         print("No action taken, exit.\n")
         exit()
     else:
@@ -619,7 +636,7 @@ for i in range(0,payjobs): #copy all datafiles to optimizer folder for archival
 
 print("\nWriting new data for payjob [" + str(firstjobid) + "]", end=' ')
 countdown( (writejsonfile((payoutfileprefix + str(firstjobid) + payfile_exts[0]), newjoblist)), 27, 0.001, 0.1)
-blocks,startblock,stopblock,leasers,distributepercentage,distributiontext,forgedblockstext,startblocktext,stopblocktext = preparehtml()
+blocks,startblock,stopblock,leasers,distributepercentage,blockrewardpercentage,distributiontext,blockrewardtext,forgedblockstext,startblocktext,stopblocktext = preparehtml()
 
 print("\nUpdate logfile for job [" + str(firstjobid) + "]", end=' ')
 countdown(writelogfile(), 32)

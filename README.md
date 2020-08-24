@@ -1,4 +1,4 @@
-# WavesLPoSDistributer          v2.3.4
+# WavesLPoSDistributer          v2.3.5
 A revenue distribution tool for Waves nodes and the leasers
 
 Welcome to Plukkies version of the LPoSdistribution script, 'the lazy' version.
@@ -69,6 +69,7 @@ npm install
     "querynode_api" : "http://localhost:6869",
     "nodename" : "<your node name>",
     "feedistributionpercentage" : "90",
+    "blockrewarddistributionpercentage" : "80",
     "mrtperblock" : "0",
     "leasewallet" : "<<your leasewallet here>>",      <-- mandatory value (also remove << and >> chars)
     "transactionattachment" : "NK2oQJzq7sjCvh7AjJcLjLT9Ax",
@@ -137,6 +138,11 @@ Here's a clarification of all key/value pairs;
    How many percent of the transaction fees in your forged blocks, are you willing to share with
    your leasers. You can also go above 100%, but then it will cost you more then you earn!
    A reasonable value could be 90%, so it means you keep 10% for the effort and cost of the node ownership.
+
+ - "blockrewarddistributionpercentage"
+   How many percent of the blockrewards are you willing to share with your leasers.
+   Every block has a fixed reward for the miner. At date this is 6 waves.
+   If you do not want to share this, put 0.
  
  - "mrtperblock"
    This feature is depricated. There are no Mrt rewards anymore since feature 14 is activated!

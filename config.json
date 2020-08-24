@@ -5,6 +5,7 @@
 		"querynode_api" : "http://localhost:6869",
 		"nodename" : "my node",
 		"feedistributionpercentage" : "90",
+		"blockrewarddistributionpercentage" : "50",
 		"mrtperblock" : "0",
 		"leasewallet" : "<<your leasewallet here>>",
 		"transactionattachment" : "NK2oQJzq7sjCvh7AjJcLjLT9Ax",

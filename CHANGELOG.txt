@@ -20,6 +20,22 @@
  *
 /* =====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES===WAVES====WAVES====
 
+Version 2.3.5
+-------------
+- date 24 august 2020
+
+- Added blockreward sharing percentage
+  In config.json you can now set percentage you want to share with your leasers from the blockreward value.
+  The blockreward was added to the Waves blockchain as an added incentive op top of the fee sharing from
+  the transaction. Blockreward can be changed by voting from the miners and currently is 6 Waves.
+
+- Files updated
+  - appng.js
+  - txoptimizer.py
+  - README.md
+  - config.json
+  - CHANGELOG.txt
+
 Version 2.3.4
 -------------
 - date 05 december 2019

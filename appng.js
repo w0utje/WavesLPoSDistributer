@@ -10,7 +10,7 @@ date = date.getDate()+"-"+date.getMonth()+"-"+date.getFullYear()
 
 if ( fs.existsSync(appngrunfile) ) {
 	console.log("\nALERT:\n" +
-                    "Found ppng interruptionfile. Apparently appng was interupted abnormally last time!\n" +
+                    "Found appng interruptionfile. Apparently appng was interupted abnormally last time!\n" +
                     "Normally if collector sessions run 100% fine, this alert should not be given.\n" +
                     "Check your logs and if everything is fine, delete the crashfile: '" + appngrunfile + "'\n" +
                     "\nGoodbye now!\n")
@@ -36,6 +36,7 @@ if (fs.existsSync(configfile)) { //configurationfile is found, let's read conten
 	var blockwindowsize = parseInt(paymentconfigdata['blockwindowsize'])
 	var nofeearray = paymentconfigdata['nopayoutaddresses']
 	var mailto = paymentconfigdata['mail']
+	var blockrewardsharingpercentage = parseInt(paymentconfigdata['blockrewarddistributionpercentage'])
 	//define all vars related to the tool settings
 	var batchinfofile = toolconfigdata['batchinfofile']
 	var payqueuefile = toolconfigdata['payqueuefile']
@@ -70,7 +71,7 @@ if (fs.existsSync(batchinfofile)) {
    
    let blockchainresponse = request(options.method, options.baseUrl + options.uri, options.headers)
    let lastblockheight = parseInt(JSON.parse(blockchainresponse.body).height) 
-   
+
    if (paymentstopblock > lastblockheight) {
 	let blocksleft = paymentstopblock - lastblockheight
         console.log("\n Current blockheight is " + lastblockheight + ". Waiting to reach " + paymentstopblock + " for next collector round.")
@@ -220,38 +221,33 @@ var prepareDataStructure = function(blocks) {
 
 	var blockwavesfees=0;
 	
-	if (myblock) {
-		if (block.height >= 1740000) { wavesFees += block.reward } //Feature 14 activated at 1740000
+	if (myblock) {  //This block is written by my waves node
+		if (block.height >= 1740000) { wavesFees += ( block.reward * blockrewardsharingpercentage ) / 100 } //Feature 14 activated at 1740000
 	}
-        block.transactions.forEach(function(transaction)
-        {
-            // type 8 are leasing tx
-            if (transaction.type === 8 && ((transaction.recipient === config.address)|| (myAliases.indexOf(transaction.recipient) > -1) )){
-                transaction.block = block.height;
-                myLeases[transaction.id] = transaction;
-            } else if (transaction.type === 9 && myLeases[transaction.leaseId]) { // checking for lease cancel tx
-                transaction.block = block.height;
-                myCanceledLeases[transaction.leaseId] = transaction;
-            }
 
-			if(myblock)
-			{
-                // considering Waves fees
-                if (!transaction.feeAsset || transaction.feeAsset === '' || transaction.feeAsset === null)
-                {
-                    if(transaction.fee < 200000000) // if tx waves fee is more dan 2 waves, filter it. probably a mistake by someone
-                    {
-                        //wavesFees += (transaction.fee*0.4);
-                        blockwavesfees += transaction.fee;
+        block.transactions.forEach(function(transaction) {
+            		// type 8 are leasing tx
+            		if (transaction.type === 8 && ((transaction.recipient === config.address)|| (myAliases.indexOf(transaction.recipient) > -1) )){
+                		transaction.block = block.height;
+                		myLeases[transaction.id] = transaction;
+            		} else if (transaction.type === 9 && myLeases[transaction.leaseId]) { // checking for lease cancel tx
+                		transaction.block = block.height;
+                		myCanceledLeases[transaction.leaseId] = transaction;
+            		}
 
-                    } else {
-                        console.log("Filter TX at block: " + block.height + " Amount: " +  transaction.fee)
-                    }
-                } else if (block.height > 1090000 && transaction.type === 4) {
-                blockwavesfees += 100000;
-		  }
-
-			}
+			if(myblock) {
+                		// considering Waves fees
+                		if (!transaction.feeAsset || transaction.feeAsset === '' || transaction.feeAsset === null) {
+                    			if(transaction.fee < 200000000)  { // if tx waves fee is more dan 2 waves, filter it. probably a mistake by someone
+                        			//wavesFees += (transaction.fee*0.4);
+                        			blockwavesfees += transaction.fee;
+                    			} else {
+                        			console.log("Filter TX at block: " + block.height + " Amount: " +  transaction.fee)
+                    			}
+                			} else if (block.height > 1090000 && transaction.type === 4) {
+                				blockwavesfees += 100000;
+		  			}
+	}
       });
       wavesFees += Math.round(parseInt(blockwavesfees / 5) * 2);
 
@@ -429,7 +425,7 @@ var pay = function() {
 "<body>" +
 
 "<div class=\"container\">" +
-"  <h3>Fees between blocks " + config.startBlockHeight + " - " + config.endBlock + ", Payout #" + config.paymentid + ", (" + feedistributionpercentage + "%)</h3>" +
+"  <h3>Fees between blocks " + config.startBlockHeight + " - " + config.endBlock + ", Payout #" + config.paymentid + ", (Tx fees " + feedistributionpercentage + "%/Blockreward " + blockrewardsharingpercentage + "%)</h3>" +
 "  <h4>(LPOS address: " + config.address + ")</h4>" +
 "  <h5>[ " + date + " ]: Hi all, again a short update of the fee's earned by the wavesnode 'Plukkieforger'. Greetings!</h5> " +
 "  <h5>You can always contact me by <a href=\"mailto:" + mailto + "\">E-mail</a></h5>" +
@@ -582,6 +578,7 @@ var pay = function() {
 	+ "Payment startblock: " + paymentstartblock + "\n"
 	+ "Payment stopblock: " + paymentstopblock + "\n"
 	+ "Distribution: " + paymentconfigdata.feedistributionpercentage + "%\n"
+	+ "Blockreward sharing: " + blockrewardsharingpercentage + "%\n"
 	+ "Following addresses are skipped for payment; \n"
 	+ JSON.stringify(nofeearray) + "\n", function(err) {
    	if (!err) {
