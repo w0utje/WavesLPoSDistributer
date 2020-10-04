@@ -125,7 +125,8 @@ var config = {
     assetFeeId: null, //not used anymore with sponsored tx
     feeAmount: parseInt(toolconfigdata.txbasefee),
     paymentAttachment: attachment, 
-    percentageOfFeesToDistribute: feedistributionpercentage
+    percentageOfFeesToDistribute: feedistributionpercentage,
+    percentageOfBlockrewardToDistribute: blockrewardsharingpercentage
 };
 
 var myLeases = {};
@@ -207,10 +208,11 @@ var start = function() {
 
 var prepareDataStructure = function(blocks) {
 
-    blocks.forEach(function(block,index) {
+    blocks.forEach(function(block,index) { //BEGIN for each block loop
     	var checkprevblock = false;
 	var myblock = false;
         var wavesFees = 0;
+	var blockrewards = 0;
 
         if (block.generator === config.address) {
 		
@@ -220,10 +222,6 @@ var prepareDataStructure = function(blocks) {
 	}
 
 	var blockwavesfees=0;
-	
-	if (myblock) {  //This block is written by my waves node
-		if (block.height >= 1740000) { wavesFees += ( block.reward * blockrewardsharingpercentage ) / 100 } //Feature 14 activated at 1740000
-	}
 
         block.transactions.forEach(function(transaction) {
             		// type 8 are leasing tx
@@ -281,9 +279,16 @@ var prepareDataStructure = function(blocks) {
 
       }
 
-        block.wavesFees = wavesFees;
+      wavesFees = ( wavesFees * config.percentageOfFeesToDistribute / 100 ) //These are the Txs fees with sharing % applied from configfile
 
-    });
+      if (myblock) {  //This block is written by my waves node
+	        // This is the blockreward amount with sharing % applied from configfile
+		if (block.height >= 1740000) { wavesFees += ( block.reward * blockrewardsharingpercentage ) / 100 } //Feature 14 activated at 1740000
+      }
+      
+      block.wavesFees = wavesFees;
+
+    }); //END for each block loop
 };
 
 /**
@@ -365,35 +370,35 @@ var getAllAlias = function() {
  */
 var distribute = function(activeLeases, amountTotalLeased, block) {
 
-    var fee = block.wavesFees;
+    var fee = block.wavesFees; //total waves fee amount + blockreward with sharing % from configfile applied
 
     for (var address in activeLeases) {
 
 	if ( nofeearray.indexOf(address) == -1 ) {	// leaseaddress is not marked as 'no pay address'
-		var share = (activeLeases[address] / amountTotalLeased);
+		var share = (activeLeases[address] / amountTotalLeased); //what is the share ratio for this address
 		var payout = true;
-	} else {
-		var share = (activeLeases[address] / amountTotalLeased);
+	} else {					//this address will not get payed
+		var share = (activeLeases[address] / amountTotalLeased); //what is the share ratio for this address
 		var payout = false;
 	  }
 
-        var amount = fee * share;
+        var amount = fee * share; //The Waves amount per address according ratio
 
         var assetamounts = [];
 
 
-        var amountMRT = share * config.distributableMrtPerBlock;
+        var amountMRT = share * config.distributableMrtPerBlock; //How many Mrt will the address get
 
-       	if (address in payments) {
-       		payments[address] += amount * (config.percentageOfFeesToDistribute / 100);
-       		mrt[address] += amountMRT;
-	} else {
-		payments[address] = amount * (config.percentageOfFeesToDistribute / 100);
-		mrt[address] = amountMRT;
+       	if (address in payments) { //Address already in array, add to amount
+       		payments[address] += amount //How many Waves fees leaser gets
+       		mrt[address] += amountMRT; //How many Mrt leaser gets
+	} else { //Address not yet in array, add entry
+		payments[address] = amount; //How many Waves fees leaser gets
+		mrt[address] = amountMRT; //How many Mrt leaser gets
 	}
 
 	if ( payout == true ) {
-        	console.log(address + ' will receive ' + amount + ' of(' + fee + ') and ' + amountMRT + ' MRT for block: ' + block.height + ' share: ' + share);
+        	console.log(address + ' will receive ' + amount + ' of ' + fee + ' Waves and ' + amountMRT + ' MRT for block: ' + block.height + ' share: ' + share);
 	} else if ( payout == false ) {
 		console.log(address + ' marked as NOPAYOUT: ' + amount + ' of(' + fee + ') and ' + amountMRT + ' MRT for block: ' + block.height + ' share: ' + share);
 	}
@@ -425,7 +430,7 @@ var pay = function() {
 "<body>" +
 
 "<div class=\"container\">" +
-"  <h3>Fees between blocks " + config.startBlockHeight + " - " + config.endBlock + ", Payout #" + config.paymentid + ", (Tx fees " + feedistributionpercentage + "%/Blockreward " + blockrewardsharingpercentage + "%)</h3>" +
+"  <h3>Fees between blocks " + config.startBlockHeight + " - " + config.endBlock + ", Payout #" + config.paymentid + ", (Share Tx fees " + config.percentageOfFeesToDistribute + "% / Blockreward " + config.percentageOfBlockrewardToDistribute + "%)</h3>" +
 "  <h4>(LPOS address: " + config.address + ")</h4>" +
 "  <h5>[ " + date + " ]: Hi all, again a short update of the fee's earned by the wavesnode 'Plukkieforger'. Greetings!</h5> " +
 "  <h5>You can always contact me by <a href=\"mailto:" + mailto + "\">E-mail</a></h5>" +
@@ -448,7 +453,7 @@ var pay = function() {
 
 		payout = true
 
-		console.log(address + ' will receive ' + parseFloat(payment).toFixed(8) + ' and ' + parseFloat(mrt[address]).toFixed(2) + ' MRT!')
+		console.log(address + ' will receive ' + parseFloat(payment).toFixed(8) + ' Waves and ' + parseFloat(mrt[address]).toFixed(2) + ' MRT in total!')
 
 		//send Waves fee
 		if (Number(Math.round(payments[address])) > 0) {
@@ -546,7 +551,8 @@ var pay = function() {
 "</body>" +
 "</html>";
 
-    console.log("total Waves fees: " + (totalfees/100000000).toFixed(8) + " (" + paymentconfigdata.feedistributionpercentage + "%) total MRT: " + totalMRT );
+
+    console.log("total Waves shared (fees + blockrewards): " + (totalfees/100000000).toFixed(8) + " (" + config.percentageOfFeesToDistribute + "%/" + config.percentageOfBlockrewardToDistribute + "%) + total MRT: " + totalMRT );
     var paymentfile = config.filename + config.paymentid + ".json";
     var htmlfile = config.filename + config.paymentid + ".html";
 

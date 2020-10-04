@@ -19,6 +19,29 @@
  * Thank you and Enjoy!
  *
 /* =====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES===WAVES====WAVES====
+Version 2.3.6
+-------------
+- date 4 october 2020
+
+- fixed sharing percentage calculation
+  In previous version you could set sharing percentages as follows;
+  - "feedistributionpercentage" = F%
+  - "blockrewarddistributionpercentage" = B%
+
+  This would set the % that would be shared for the transactions fees and for the blockreward separately.
+  However, it turned out that the feedsitribution percentage would also be calculated on top of the blockreward percentage.
+  This would give undesired percentage and to low sharing results. In this release that is fixed.
+  Suppose, you would set in the config file 80% for fee sharing and 90% for blockreward sharing and  
+  you had 2 blocks forged and the fees in total were 0.5 waves and the blockreward at current is 6 Waves per block.
+  The waves amount what would be shared amongst all leasers would be:
+  Waves to share : ( 0.5 x 0.8 ) + ( 12 x 0.9 )  = 11.2 Waves
+
+- Changed some textual output in reports and stio on screen
+
+- Files updated
+  - config.json
+  - appng.js
+  - CHANGELOG.txt
 
 Version 2.3.5
 -------------
