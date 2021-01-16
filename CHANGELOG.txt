@@ -19,6 +19,42 @@
  * Thank you and Enjoy!
  *
 /* =====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES===WAVES====WAVES====
+Version 3.0
+-------------
+- date 16 january 2021
+
+- New features
+
+  1.Added tool Forktester (forktester.py)
+    Forktester can be used to manage if your node is on fork.
+    It uses controlnodes which are used to compare block headers between your node and the control nodes.
+    Forktester requests 5 blocks (counting from lastblock-2) and compared these blocks between your node
+    and the controlnodes defines in the config.json file.
+    Forktester integrates alerting via Telegram. If problems are found (like a fork), alerting is send
+    to your telegram account. Rollback can be activated also via forktester.
+
+    Forktester uses settings from config.json.
+    For best fork control, execute forktester.py periodically from a job sceduler, like crontab.
+    For more help, execute : forktester.py --help
+
+  2.Added tool Open API node discovery (openapinodes.py)
+    This tool will try for all your connected peer nodes, if they have a reachable API server.
+    The purpose of openapinodes.py script is to reveal nodes which can be used by the forktester.py
+    script. Open nodes can be added to the config.json file. The Forktester tool (new feature 1.)
+    is an optional extension to use to forktester.py. Both tools can work independently.
+    openapinodes.py only needs to be used if you want to find nodes that are open for an API call.
+    If you selected some controlnodes and pushed them into the config.json, you only need to run
+    the node discovery tool if control nodes disappear from the blockchain or you receive alerts
+    from Forktester that control nodes are often out of sync with your node.
+
+- File changes (+ added, - removed, * updated)
+  + forktester.py
+  + openapinodes.py
+  * CHANGELOG.txt
+  * config.json
+  * README.md
+
+
 Version 2.3.6
 -------------
 - date 4 october 2020

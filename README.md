@@ -9,6 +9,15 @@ The payout jobs are nicely queued now and don't have to be executed instantly an
 after the collector session has been executed.
 
 Use this version if you like stuff that is automated for you! :-)
+This version delivers tools, that work for you!
+- Collect mining fees (start_collector.sh)
+- Check collection results (start_checker.sh)
+- Optimize multiple collector sessions (txoptimizer.py)
+- Execute your payout transactions (node ./masstx.js)
+- Store your payreports to AWS or Private server
+- Send messaging and alerting to telegram
+- Discover peering nodes that can be used for fork detection (openapinodes.py)
+- Execute forktesting (forktester.py --help more info)
 
 Many thanks to original version of Marc Jansen and the fork of W0utje!
 
@@ -90,7 +99,7 @@ npm install
 			"region" : ""
 		}
   },
-  "toolbaseconfig" : {
+  "toolbaseconfig" : {                                 <-- core settings, leave default
     "batchinfofile" : "batchinfo.json",
     "payqueuefile" : "payqueue.dat",
     "payoutfilesprefix" : "wavesleaserpayouts",
@@ -104,6 +113,21 @@ npm install
     "masstransferversion" : "1",
     "relevantassets" : [ "Waves", "Mrt" ],
     "optimizerdir" : "txoptimizer"
+  },
+  "forktoolsconfig" : {
+    "controlnodes" : { },                               <-- optional
+    "auto_rollback" : "no",
+    "lastblockheight" : "/blocks/height",
+    "blockheaders" : "/blocks/headers/at/",
+    "rollback_blocks" : "2000"
+  },
+  "telegramconfig" : {                                  <-- optional
+     "use" : "no",
+     "telegram_api" : "https://api.telegram.org/bot",
+     "telegram_token" : "",
+     "telegram_chat_id" : "",
+     "telegram_group" : "",
+     "telegram_botuser" : ""
   }
 }
 ```
@@ -284,6 +308,26 @@ Here's a clarification of all key/value pairs;
  - "optimizerdir"
    The folder where 'txoptimizer' runs are archived for backup and reference purpose.
 ```
+**forktoolsconfig**  (This part is for the forktesting tool)
+```
+ - "controlnodes" (list)
+   List of controlnodes used by forktester.py. Status should be up or down.
+   Down nodes will not be used. Example: { "http://anode.blockchain.net:6869" : "up",
+					   "http://10.20.30.40:80" : "up" },
+
+ - "auto_rollback" (yes/no)
+   This defines if your node automatically executes a rollback if it detects fork.
+   Becarefull! Forktester can send alerts of a forked is detected and you have more
+   control to rollback manually. Forks do normally not happen often. Default "no".
+```
+**telegramconfig**  (This part has all the telegram details)
+```
+ - "use" (yes/no)
+   Activate telegram usage if alerts are raised by tools.
+
+ - All other JSON keys for telegram
+   Create an account on telegram and fill out all details in config.json
+```
 
 WARNING
 Keep the config.json file confidential!
@@ -326,8 +370,8 @@ If you use other version of the script, like from Marc jansen or w0utje, it's ea
    are explained in detail.
 
 ## Summary steps using the tool after installation
-- run a collector session: ./start_collector
-- run checker: ./start_checker
+- run a collector session: ./start_collector.sh
+- run checker: ./start_checker.sh
 - pay: node masstx
 
 If you want to run multiple collector sessions before you do a payment:
@@ -475,6 +519,29 @@ and the the checks every week and the payout just once a month or whenever you f
 that's all fine. It also depends on the frequency of blockhits for your node and the blockwindows size
 you configure. It's all up to you and it doesn't bite one another.
 
+
+## Monitoring forks (forktester.py)
+Forktester can be used to manage if your node is on fork.
+It uses controlnodes which are used to compare block headers between your node and the control nodes.
+Forktester requests 5 blocks (counting from lastblock-2) and compared these blocks between your node
+and the controlnodes defines in the config.json file.
+Forktester integrates alerting via Telegram. If problems are found (like a fork), alerting is send
+to your telegram account. Rollback can be activated also via forktester.
+
+Forktester uses settings from config.json.
+For best fork control, execute forktester.py periodically from a job sceduler, like crontab.
+ For more help, execute : forktester.py --help
+
+## Discovering open API nodes (openapinodes.py)
+This tool will try for all your connected peer nodes, if they have a reachable API server.
+The purpose of openapinodes.py script is to reveal nodes which can be used by the forktester.py
+script. Open nodes can be added to the config.json file. The Forktester tool (new feature 1.)
+is an optional extension to use to forktester.py. Both tools can work independently.
+openapinodes.py only needs to be used if you want to find nodes that are open for an API call.
+If you selected some controlnodes and pushed them into the config.json, you only need to run
+the node discovery tool if control nodes disappear from the blockchain or you receive alerts
+from Forktester that control nodes are often out of sync with your node. 
+
 ## A fully automated LPOS cycle
 Below example is a fully automated LPOS cycle, which I use myself on a Linux sysem. It logs the cronjob tasks,\
 with data and time added. It automatically collects, pending payment validation, merges with Txoptimizer and execute payment.
@@ -484,14 +551,20 @@ Everything is logged in home 'folder ~/log/'. These are the scheduled tasks;
 - merge all pending jobs first day of month @01.00 at night with txoptimizer.py
 - checks pending payments 5 minutes AFTER txoptimizer kicks off
 - execute payment first day of the month @13.00 in the afternoon (node masstx)
+
+The forktester will check every 10 mins if a fork happended.
 ```
 # m h  dom mon dow   command
 # m h  dom mon dow   command
-45 23 * * * cd /home/plukkie/WavesLPoSDistributer/ && ./start_collector.sh > ~/log/start_collector.sh-`date +\%d-\%m-\%Y_\%T`.log 2>&1
-55 00 1 * * cd /home/plukkie/WavesLPoSDistributer/ && ./start_checker.sh > ~/log/start_checker.sh-`date +\%d-\%m-\%Y_\%T`.log 2>&1
-00 01 1 * * cd /home/plukkie/WavesLPoSDistributer/ && ./txoptimizer.py > ~/log/txoptimizer.py-`date +\%d-\%m-\%Y_\%T`.log 2>&1
-05 01 1 * * cd /home/plukkie/WavesLPoSDistributer/ && ./start_checker.sh > ~/log/start_checker.sh-`date +\%d-\%m-\%Y_\%T`.log 2>&1
-0  13 1 * * cd /home/plukkie/WavesLPoSDistributer/ && node masstx.js > ~/log/masstx.js-`date +\%d-\%m-\%Y_\%T`.log 2>&1
+45 23 * * * cd /home/wavesuser/WavesLPoSDistributer/ && ./start_collector.sh > ~/log/start_collector.sh-`date +\%d-\%m-\%Y_\%T`.log 2>&1
+55 00 1 * * cd /home/wavesuser/WavesLPoSDistributer/ && ./start_checker.sh > ~/log/start_checker.sh-`date +\%d-\%m-\%Y_\%T`.log 2>&1
+00 01 1 * * cd /home/wavesuser/WavesLPoSDistributer/ && ./txoptimizer.py > ~/log/txoptimizer.py-`date +\%d-\%m-\%Y_\%T`.log 2>&1
+05 01 1 * * cd /home/wavesuser/WavesLPoSDistributer/ && ./start_checker.sh > ~/log/start_checker.sh-`date +\%d-\%m-\%Y_\%T`.log 2>&1
+0  13 1 * * cd /home/wavesuser/WavesLPoSDistributer/ && node masstx.js > ~/log/masstx.js-`date +\%d-\%m-\%Y_\%T`.log 2>&1
+
+# Waves blockchain forktester
+*/10 * * * * cd /home/wavesuser/WavesLPoSDistributer/ && ./forktester.py >> ~/log/forktester.py-`date +\%m-\%Y`.log 2>&1
+
 ```
 With this setup, everything is done automatically and there's a good archive for logging.
 
