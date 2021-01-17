@@ -415,16 +415,24 @@ def get_controlnode_blocks(nodearray):
         else: print("\n Skipping control node '" + node + "', as it is not marked 'up' in config.")
     
     if len(cnblocks) == 0: #No active control nodes, alert and quit
-        
+       
         tt = '\nMonitoring Alert!\n' +\
              '-----------------\n' +\
-             str(sys.argv[0]) + ' problems.\n' +\
-             'No active control nodes usable.\n' +\
-             'All nodes in config.json are \n' +\
-             'marked down.\n'
+             str(sys.argv[0]) + ' problems.\n'
         
+        if len(cn) == 0: #No nodes in configfile added
+            
+            tt += 'Please add control nodes to config.json.\n'
+            print('\n There are no controlnodes added to config.json. Can not compare.')
+
+        else: #all nodes in config down
+
+            tt += 'No control nodes usable.\n' +\
+                  'All marked "down" in config.json.\n'
+
+            print('\n Seems there are no usable control nodes. All marked down. Can not compare.')
+
         telegram_bot_sendtext(tt)
-        print()
         exit()
 
     print()
