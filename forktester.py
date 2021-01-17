@@ -206,8 +206,8 @@ def check_forkfile(): #Check if forkfile already exists
         if ffcnt != 0: #Found forkfiles
             
             rollbackheight = forkfile.strip("forked.") #Strip string and keep blocknr.
-            rollbackfile = "rollback." + str(rollbackheight)
-            rollbackfinished = "finished." + str(rollbackheight)
+            rollbackfile = "rollback." + str(rollbackheight) #File created when rollback started
+            rollbackfinished = "finished." + str(rollbackheight) #File created when rollback finished
             
             print('\n Found in total ' + str(ffcnt) + ' forkfiles. Selected ' + forkfile + ' as candidate.')
 
@@ -520,7 +520,8 @@ def telegram_bot_sendtext(botmsg):
 
 # Function that requests POST rollback api call
 # params
-# - node : waves full node to use
+# - wavesnode : waves full node to use
+# - rollbackblock : blockheight to which rollback occurs
 def rollback_call(wavesnode,rollbackblock):
 
     json_body = {
@@ -638,7 +639,7 @@ def fork_actions():
         telegram_bot_sendtext(tt)
 
         os.rename(forkfile, rollbackfile) #rename forkfile to rollback file
-        #rollback_call(mynode,rollbackheight) #activate rollback
+        rollback_call(mynode,rollbackheight) #activate rollback
         os.rename(rollbackfile, rollbackfinished) #rename rollback file to finished file
 
         for name in glob.glob('forked.[0-9]*'): #Found old forkfiles, remove

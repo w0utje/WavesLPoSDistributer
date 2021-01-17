@@ -19,6 +19,25 @@
  * Thank you and Enjoy!
  *
 /* =====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES===WAVES====WAVES====
+Version 3.0.1
+-------------
+- date 17 january 2021
+
+- Bug fixes
+
+  1. forktester.py
+     The function to automatically rollback was commented out. This does not result in rollback, allthough
+     the config option "auto_rollback" was possibly set to 'yes' in the config.json file.
+
+  2. README.md
+     Textual changes and optimizations after review the file.
+
+- File changes (+ added, - removed, * updated)
+  * forktester.py
+  * CHANGELOG.txt
+  * README.md
+
+
 Version 3.0
 -------------
 - date 16 january 2021
