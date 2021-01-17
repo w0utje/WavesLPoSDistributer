@@ -1,4 +1,4 @@
-# WavesLPoSDistributer          v3.0
+# WavesLPoSDistributer          v3.0.1
 A revenue distribution tool for Waves nodes and the leasers
 
 Welcome to Plukkies version of the LPoSdistribution script, 'the lazy' version.
@@ -9,7 +9,10 @@ The payout jobs are nicely queued now and don't have to be executed instantly an
 after the collector session has been executed.
 
 Use this version if you like stuff that is automated for you! :-)
-This version delivers tools, that work for you!
+This version delivers tools, that work for you! A one stop visit to manage your
+payouts and the be aware of script faults and block inconsistencies. Get telegram
+alerts and store reports in the Cloud!
+
 - Collect mining fees (start_collector.sh)
 - Check collection results (start_checker.sh)
 - Optimize multiple collector sessions (txoptimizer.py)
@@ -380,6 +383,10 @@ If you want to run multiple collector sessions before you do a payment:
 - run optimizer: ./txoptimizer.py
 - execute your payment: node masstx
 
+Optional:
+Use additional tools forktester.py and openapinodes.py to ensure reliable
+blockchain sync status and fork detection if you like.
+
 ## Running the collector sessions
 After a successful configuration of the tool, start with:
 ```sh
@@ -389,13 +396,13 @@ NOTE
 If you can't start 'start_collector', check if the script has execute 'x' on it.
 If not add with: ```chmod u+x start_collector.sh```
 
-NOTE\
+NOTE
 The script can consume a serious amount of memory and exits with errors during it's run.
 Therefore I've put 'start_collector.sh' script as starter which runs 'node appng.js' with
 some memory optimized settings.
-For me it works with tweaks to 65KB of stack memory and 8GB of available RAM. So use 'start_collector.sh'
-if you run into problems and tweak to your available RAM.\
-If it keeps on exitting, then shrink the block batchsize that are collected during one batch.\
+For me it works with tweaks to 65KB of stack memory and 8GB of available RAM.
+So use 'start_collector.sh' if you run into problems and tweak to your available RAM.
+If it keeps on exitting, then shrink the block batchsize that are collected during one batch.
 This way multiple smaller batchsizes will be collected and consume less memory.
 To decrease the initial batchsize, edit file config.json and set "blockwindowsize" smaller.
 With smaller collector batches, you get multiple pending payments in the payment queue.
@@ -523,28 +530,41 @@ you configure. It's all up to you and it doesn't bite one another.
 ## Monitoring forks (forktester.py)
 Forktester can be used to manage if your node is on fork.
 It uses controlnodes which are used to compare block headers between your node and the control nodes.
-Forktester requests 5 blocks (counting from lastblock-2) and compared these blocks between your node
-and the controlnodes defines in the config.json file.
+Forktester requests 5 blocks (counting from lastblock-2) and compares these blocks between your node
+and the controlnodes defined in the config.json file (key "controlnodes" : { ... })
 Forktester integrates alerting via Telegram. If problems are found (like a fork), alerting is send
-to your telegram account. Rollback can be activated also via forktester.
+to your telegram account. Rollback can be activated also via forktester. This can be done manually
+or automatically (option "auto_rollback" : "yes").
+
+WARNING
+Use config option "auto_rollback" : "yes" (default "no") with precaution!
+Alerting that a fork happened, can be a false positive. It's better to first use forktester for
+some time without the automatic rollback function turned to "yes" and do some manual investigation
+if an alert is send about a possible fork. If you concluded that a fork indeed happened on your
+node, there is a forkfile created with the name "forked.<block>". If you start forktester and
+a forkfile is found it reports on the action you can do to execute rollback or to remove the
+forkfile if it is a false positive.
 
 Forktester uses settings from config.json.
 For best fork control, execute forktester.py periodically from a job sceduler, like crontab.
- For more help, execute : forktester.py --help
+For more help, execute : forktester.py --help
 
 ## Discovering open API nodes (openapinodes.py)
 This tool will try for all your connected peer nodes, if they have a reachable API server.
 The purpose of openapinodes.py script is to reveal nodes which can be used by the forktester.py
-script. Open nodes can be added to the config.json file. The Forktester tool (new feature 1.)
-is an optional extension to use to forktester.py. Both tools can work independently.
-openapinodes.py only needs to be used if you want to find nodes that are open for an API call.
+script. Open nodes can be added to the config.json file. The openapinode tool is an optional
+extension for Forktester, that can be used to find open nodes. Both tools work independently.
+Openapinodes.py only needs to be used if you want to find nodes that are open for an API call.
 If you selected some controlnodes and pushed them into the config.json, you only need to run
 the node discovery tool if control nodes disappear from the blockchain or you receive alerts
-from Forktester that control nodes are often out of sync with your node. 
+from Forktester that control nodes are often out of sync with your node. If controlnodes
+that are used by forktester, give problems, forktester will report on that in the logs and
+also in telegram if you activate it in the config.json.
 
 ## A fully automated LPOS cycle
-Below example is a fully automated LPOS cycle, which I use myself on a Linux sysem. It logs the cronjob tasks,\
-with data and time added. It automatically collects, pending payment validation, merges with Txoptimizer and execute payment.
+Below example is a fully automated LPOS cycle, which I use myself on a Linux sysem.
+It logs the cronjob tasks, with data and time added. It automatically collects,
+does pending payment validation, merges with Txoptimizer and then execute payment.
 Everything is logged in home 'folder ~/log/'. These are the scheduled tasks;
 - collect every night 45mins after 23.00 the forged block stats with appng.js (start_collector.sh)
 - checks pending payments 5 minutes BEFORE txoptimizer kicks off (for validation in case of doubts or problems)
