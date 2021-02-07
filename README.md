@@ -1,4 +1,4 @@
-# WavesLPoSDistributer          v3.0.1
+# WavesLPoSDistributer          v3.1
 A revenue distribution tool for Waves nodes and the leasers
 
 Welcome to Plukkies version of the LPoSdistribution script, 'the lazy' version.
@@ -21,6 +21,7 @@ alerts and store reports in the Cloud!
 - Send messaging and alerting to telegram
 - Discover peering nodes that can be used for fork detection (openapinodes.py)
 - Execute forktesting (forktester.py --help more info)
+- Collect usefull info about your node and leasers with nodeinfo.py tool
 
 Many thanks to original version of Marc Jansen and the fork of W0utje!
 
@@ -131,7 +132,21 @@ npm install
      "telegram_chat_id" : "",
      "telegram_group" : "",
      "telegram_botuser" : ""
-  }
+  },
+  "api_uris" : {					<-- core settings, leave default
+     "node_version" : "/node/version",
+     "node_status" : "/node/status",
+     "all_peers" : "/peers/all",
+     "connected_peers" : "/peers/connected",
+     "active_leases" : "/leasing/active/{address}",
+     "address_aliasses" : "/alias/by-address/{address}",
+     "reward_status" : "/blockchain/rewards",
+     "balances" : "/addresses/balance/details/{address}",
+     "configinfo" : "/debug/configinfo",
+     "node_state" : "/debug/info",
+     "lastblock" : "/blocks/last",
+     "blockchainheight" : "/blocks/height"
+   }
 }
 ```
 The values marked with statement "<-- mandatory" need to be filled out,
@@ -331,6 +346,12 @@ Here's a clarification of all key/value pairs;
  - All other JSON keys for telegram
    Create an account on telegram and fill out all details in config.json
 ```
+**API uri config**  (This has api uris to request info from the Node API server)
+```
+ - All uris specified here, are requested by the tool nodeinfo.py
+   For the do it yourself people, you can add extra urls here for your
+   convenience. The uris are added in JSON to the variable datadict[key] = <json repsons>
+```
 
 WARNING
 Keep the config.json file confidential!
@@ -347,6 +368,7 @@ from the the new downloaded version to your current/old version.
 If you use a version that does not have the config.json file yet (it was added in 2.0), then
 you should also configure settings in there. Please see chapter "Installation steps: first time users, point 3"
 where the configuration file and all settings are explained in detail.
+Latest config.json version for 3.1 has added options, so please replace/add config options if upgrading.
 
 ## Installation steps: users that already use one of the original versions of the script (other then Plukkies version)
 If you use other version of the script, like from Marc jansen or w0utje, it's easy migration;
@@ -560,6 +582,11 @@ the node discovery tool if control nodes disappear from the blockchain or you re
 from Forktester that control nodes are often out of sync with your node. If controlnodes
 that are used by forktester, give problems, forktester will report on that in the logs and
 also in telegram if you activate it in the config.json.
+
+## Query node info (nodeinfo.py)
+This tool show interessting data about your node and about your leasers.
+I.e list of leasers, current block, block with first active leaser, node version etc.
+Just run 'nodeinfo.py' or 'nodeinfo.py help'
 
 ## A fully automated LPOS cycle
 Below example is a fully automated LPOS cycle, which I use myself on a Linux sysem.
