@@ -56,5 +56,19 @@
 		"telegram_chat_id" : "",
 		"telegram_group" : "",
 		"telegram_botuser" : ""
+	},
+	"api_uris" : {
+		"node_version" : "/node/version",
+		"node_status" : "/node/status",
+		"all_peers" : "/peers/all",
+		"connected_peers" : "/peers/connected",
+		"active_leases" : "/leasing/active/{address}",
+		"address_aliasses" : "/alias/by-address/{address}",
+		"reward_status" : "/blockchain/rewards",
+		"balances" : "/addresses/balance/details/{address}",
+		"configinfo" : "/debug/configinfo",
+		"node_state" : "/debug/info",
+		"lastblock" : "/blocks/last",
+		"blockchainheight" : "/blocks/height"
 	}
 }

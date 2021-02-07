@@ -238,6 +238,7 @@ def preparehtml():
     leasers = str(len(newjobstats[2]))
     date = (datetime.datetime.now()).strftime("%d-%m-%Y")
 
+
     html =  "<!DOCTYPE html>" +\
             "<html lang=\"en\">" +\
             "<head>" +\
@@ -248,13 +249,15 @@ def preparehtml():
             "</head>" +\
             "<body>" +\
             "<div class=\"container\">" +\
-            "  <h3>Fees between blocks " + str(startblock) + " - " + str(stopblock) + ", Payout #" + str(firstjobid)
-   
-    if (distributepercentage != 'unknown'): html += ", ( Fees " + str(distributepercentage) + "% )"
-    if (blockrewardpercentage != 'unknown'): html += " / ( Blockrewards " + str(blockrewardpercentage) + "% )"
-    
+            " <h3>" + "Waves leasing Payout #" + str(firstjobid)
+
+    if (distributepercentage != 'unknown'): html += ", Sharing fees " + str(distributepercentage) + "%"
+    if (blockrewardpercentage != 'unknown'): html += " / blockrewards " + str(blockrewardpercentage) + "%"
+  
     html += "</h3>" +\
-            "  <h4>(LPOS address: " + str(nodewallet) + ")</h4>" +\
+            " <h4>Collection period from " + get_blocktimestamp(startblock, querynode, blockheaders_suffix) + " till " +\
+            get_blocktimestamp(stopblock, querynode, blockheaders_suffix) + " (block " + str(startblock) + " - " + str(stopblock) + ")</h4>" +\
+            "  <h4>LPOS address: " + str(nodewallet) + "</h4>" +\
             "  <h5>[ " + str(date) + " ]</h5>" +\
             "  <h5>Dear leasers, here's the periodic report of the fee distribution earned by wavesnode 'Plukkieforger'. Greetings!</h5> " +\
             "  <h5>You can always contact me by <a href=\"mailto:" + str(mail) + "\">E-mail</a></h5>" +\
@@ -475,6 +478,42 @@ def writelogfile(): #function that writes new logfile for first job
     logfile.write(textblock)
     logfile.close()
 
+
+## Function to get_jsondata
+## return json.data
+## params:
+## - node : http(s)://node:port where api server can be reached
+## - uri : /the/uri/to/query
+def get_jsondata(node, uri):
+    
+    myurl = node + uri
+
+    try:
+        urlget = urllib.request.urlopen(myurl)
+        jsondata = json.loads(urlget.read())
+    
+    except:
+        jsondata = { "timestamp" : "0" }
+
+    return jsondata
+
+## Function that collects the timestamp of a block
+## the timestamp is returned
+## params:
+## - blockheight : the block to request
+def get_blocktimestamp (blockheight, node, baseuri):
+    jsondata = get_jsondata(node, baseuri + str(blockheight).strip())
+    timestamp = int(jsondata['timestamp'])/1000 #timestamp in seconds, ref.unix epoch time
+    if timestamp != 0:
+        mytime = time.strftime("%d-%m-%Y %H:%M:%S", time.gmtime(timestamp))
+    else:
+        mytime = "<< No timestamp received >>"
+
+    return mytime
+
+
+####################  START MAIN PROGRAM ####################
+
 print()
 prechecks()
 
@@ -488,7 +527,7 @@ with open(configfile, "r") as json_file:     # read and set variables from confi
     mail = jsonconfigdata["paymentconfig"]["mail"]
     nopayoutaddresses = jsonconfigdata["paymentconfig"]["nopayoutaddresses"]
     nodewallet = jsonconfigdata["paymentconfig"]["leasewallet"]
-
+    blockheaders_suffix = jsonconfigdata["forktoolsconfig"]["blockheaders"]
 
 errorchecks()
 

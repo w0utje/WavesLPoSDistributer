@@ -19,6 +19,39 @@
  * Thank you and Enjoy!
  *
 /* =====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES===WAVES====WAVES====
+
+Version 3.1
+-------------
+- date 7 feb 2021
+
+- New features
+
+  1. Added tool nodeinfo.py
+     This tool shows information about your node and wallet;
+     - overview or detailed info (--help for more info)
+     - node software version
+     - leasers
+     - peer connections
+     - Waves balances
+     - Top leasers
+     - Block with the oldest active leaser
+     
+
+- Changes
+
+  1. Payreport layout changed.
+     The date and time of the startblock and stopblock is now shown.
+  2. Config.json file has api_uris added for the new nopeinfo.py
+     utility.  
+
+- File changes (+ added, - removed, * updated)
+  + nodeinfo.py
+  * config.json
+  * txoptimizer.py
+  * CHANGELOG.txt
+  * README.md
+
+
 Version 3.0.1
 -------------
 - date 17 january 2021
