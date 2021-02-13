@@ -55,7 +55,7 @@ def check_start_mode(): # How is app started
             print(" help    : Shows this help screen")
             print(" detail  : Shows extended info about node peers and leasers\n")
 
-            exit()
+            a1 = 'help'
 
     except:
         a1 = "default"
@@ -72,8 +72,8 @@ def get_jsondata(node, base_uri):
     myurl = node + base_uri
 
     try:
-        urlget = urllib.request.urlopen(myurl)
-        jsondata = json.loads(urlget.read())
+        urlget = https.request.('GET', myurl)
+        jsondata = json.loads(urlget.data)
 
     except:
         jsondata = {}
@@ -190,6 +190,8 @@ class node:
         
 def present_overview(args):
 
+    if args == 'help': exit()
+    
     gb = nodeinfo.balances['generating']['waves']
 
     print()
