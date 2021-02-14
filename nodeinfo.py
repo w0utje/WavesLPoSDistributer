@@ -115,7 +115,7 @@ def get_blockchaindata ():
             if timestamp < oldestlease: # Current lease is older then previous
                 oldestlease = timestamp
                 firstleaserblock = lease['height']
-
+                firstleaser = sender
 
             if sender not in datadict['leasers']: # Add sender, amount, txs
                 datadict['leasers'][sender] = { 'amount' : amount, 'txs' : 1, 'timestamp' : timestamp , 'lease_start' : mytime }
@@ -131,7 +131,7 @@ def get_blockchaindata ():
                 txs = datadict['leasers'][sender]['txs'] + 1
                 datadict['leasers'][sender] = { 'amount' : oldamount+amount, 'txs' : txs, 'timestamp' : oldtimestamp, 'lease_start' : oldmytime }
 
-        datadict['firstleaserblock'] = { 'blockid' : firstleaserblock, 'date' : get_time(oldestlease) } # This is the block with the first active leaser
+        datadict['firstleaserblock'] = { 'blockid' : firstleaserblock, 'date' : get_time(oldestlease), 'address' : firstleaser } # This is the block with the first active leaser
 
         datadict['active_leases'] = activeleases # Set number of active leases
 
@@ -196,10 +196,12 @@ def present_overview(args):
 
     print()
     print(' Node software version           : ' + nodeinfo.version )
+    print(' Wallet address                  : ' + nodeinfo.wallet)
     print(' Total / Connected peers         : ' + str(nodeinfo.totalpeers) + ' / ' + str(len(nodeinfo.connectedpeers)) )
     print(' Active leases to node           : ' + str(nodeinfo.activeleases) + ' [ generating balance : ' + str(gb) + ' Waves ]')
     print(' Total unique recipients         : ' + str(nodeinfo.leasers))
-    print(' Oldest block with active leaser : height ' + str(nodeinfo.firstleaseblock['blockid']) + ', date ' + nodeinfo.firstleaseblock['date'])
+    print(' Oldest block with active leaser : height ' + str(nodeinfo.firstleaseblock['blockid']) + ', lease started : ' + nodeinfo.firstleaseblock['date'])
+    print('                                   address \'' + str(nodeinfo.firstleaseblock['address']) + '\'')
     print(' Current block                   : height ' + nodeinfo.blockchainheight )
     print()
     print(' Waves balances')
