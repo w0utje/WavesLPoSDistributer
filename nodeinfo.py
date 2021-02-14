@@ -72,7 +72,7 @@ def get_jsondata(node, base_uri):
     myurl = node + base_uri
 
     try:
-        urlget = https.request.('GET', myurl)
+        urlget = https.request('GET', myurl)
         jsondata = json.loads(urlget.data)
 
     except:
