@@ -420,6 +420,15 @@ function getpayqueue (myfunction) {
 
 } //End function getpayqueue
 
+function dumpjsontofile (filename, jsonarray) {
+
+	const data = JSON.stringify(jsonarray, null, 4);
+
+	fs.writeFile(filename, data, {}, function(err) {
+                if (!err) { } else { console.log("Warning, errors writing " + filename + "!\n",err); }
+        });
+}
+
 function updatepayqueuefile (array, batchid) {
 
 	jobs-- //Count down everytime a job is done
@@ -601,6 +610,9 @@ var doPayment = function(payments, counter, batchid, nrofmasstransfers) {
 							if ( masstransfercounter == 1 ) { loop = totaltxs - (masstransfers-1)*maxmasstransfertxs }
 						}
 						if ( masstransfers == 1 ) { timeout = 0 } else { timeout = transactiontimeout }
+						
+						//Dump JSON array with pay amounts to file for troubleshooting if app crashed or payment fails
+						dumpjsontofile( paymentsdonedir + "masstx-payment-" + batchid + "-" + masstransfercounterup + ".json", masstransactionpayment);
 
 						//Put here the actual POST function for a masstransfer
         	                                request.post({ url: config.node + toolconfigdata.masstxapisuffix,

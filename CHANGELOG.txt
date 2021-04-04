@@ -20,6 +20,31 @@
  *
 /* =====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES===WAVES====WAVES====
 
+Version 3.1.1
+-------------
+- date 4 apr 2021
+
+- Changes
+
+  1. Masspayment tool 'masstx.js'
+     - The tool dumps the payments for every mass transaction in JSON format to a file.
+       Reason for this is if a crash or payment failure occurs, it is easier to check and resend the payment.
+       The log is as follows:
+       Suppose the batchid of the payment is 50. There are 250 leasers. At max 100 transactions currently are 
+       supported in a mass transaction. The payment for this batch will be spread over 3 mass transactions.
+       Masstx will log three files in the paymentsdone directory (default paymentsDone/ ) :
+       - masstx-payment-50-1.json
+       - masstx-payment-50-2.json
+       - masstx-payment-50-3.json
+
+       If for some reason a mass transfer fails, you can resend it manually with curl or postman.
+       The JSON for the body would be the masstx payment dump file. The anatomy of the POST request would have
+       the following details;
+       - POST url : http://localhost:6869/assets/masstransfer
+       - json: the masstx-payment-<failed (sub)batch>.json
+       - headers: { "Accept": "application/json", "Content-Type": "application/json", "api_key": <your API key> }
+
+
 Version 3.1
 -------------
 - date 7 feb 2021
