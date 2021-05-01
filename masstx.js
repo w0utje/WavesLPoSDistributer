@@ -429,6 +429,28 @@ function dumpjsontofile (filename, jsonarray) {
         });
 }
 
+//Promise function to retrieve the signed masstransfer
+//return the json body
+function promise_sign_masstransaction(dumpfile, jsondata) {
+
+	let request_options = {
+		url: config.node + toolconfigdata.masstxsignapisuffix,
+		json: jsondata,
+                headers: { "Accept": "application/json", "Content-Type": "application/json", "api_key" : config.apiKey }
+	}
+
+	return new Promise(function(resolve, reject) {
+		request.post(request_options, function(err, res, body) {
+                        if (err) {
+				reject(err)
+                        } else {
+				dumpjsontofile( dumpfile, body); //Write signed JSON data to file as reference if pay failures occur
+                                resolve(body)
+                        }
+                })
+        }) //END promise
+}
+
 function updatepayqueuefile (array, batchid) {
 
 	jobs-- //Count down everytime a job is done
@@ -559,13 +581,12 @@ var doPayment = function(payments, counter, batchid, nrofmasstransfers) {
 				if ( asset == 'Waves' ) { decimalpts = 8 } else if ( asset == 'Mrt' ) { decimalpts = 2 }
  				if ( asset !== 'Waves' ) { var assetId = payment["Common"][asset + "assetId"] }
 
-				var masstransactionpayment = {	"version": masstransferversion,
-								"proofs": [ "8Aa6EUtS6qsHEBWdx7PjkqrVsE4kBMwbixS5eSCLtiSq" ],
-								"sender": payment.Common.sender,
-								"attachment": payment.Common.attachment,
-								"fee": 0 }
+				var masstransactionsign = {  "type" : 11,
+							     "sender" : payment.Common.sender,
+							     "attachment" : payment.Common.attachment,
+							     "fee" : 0 }
 
-				if ( asset !== 'Waves' ) { masstransactionpayment.assetId = assetId } //Add assetId to json if asset is NOT Waves
+				if ( asset !== 'Waves' ) { masstransactionsign.assetId = assetId } //Add assetId to json if asset is NOT Waves
 
 				assettxs.forEach(function (asset) { assetamount += asset.amount }) //How much fees total for an asset
 
@@ -599,26 +620,33 @@ var doPayment = function(payments, counter, batchid, nrofmasstransfers) {
 							ii++ //counter for all transactions
 						}
 
-						masstransactionpayment['transfers'] = masstxarray //add transactions to payment json object
+						masstransactionsign['transfers'] = masstxarray //Add transactions to sign json object
 						masstransfercounter-- //For breaking the for loop
 						masstransfercounterup++
 						masstransfercost = transferfee + (masstransferfee * masstxarray.length)
 						masstransfercost = roundup(masstransfercost, transferfee)
-						masstransactionpayment.fee = masstransfercost //Add fee to masstransfer json object
+						masstransactionsign.fee = masstransfercost //Add fee to sign json object
 
 						if ( totaltxs > maxmasstransfertxs ) { //calc number of transactions for last masstransfer
 							if ( masstransfercounter == 1 ) { loop = totaltxs - (masstransfers-1)*maxmasstransfertxs }
 						}
 						if ( masstransfers == 1 ) { timeout = 0 } else { timeout = transactiontimeout }
 						
-						//Dump JSON array with pay amounts to file for troubleshooting if app crashed or payment fails
-						dumpjsontofile( paymentsdonedir + "masstx-payment-" + batchid + "-" + masstransfercounterup + ".json", masstransactionpayment);
+						//Dump JSON sign object to file for troubleshooting if app crashed
+						signfile = paymentsdonedir + "masstx-sign-" + batchid + "-" + masstransfercounterup + ".json"
+						signedfile = paymentsdonedir + "masstx-signed-" + batchid + "-" + masstransfercounterup + ".json"
+						dumpjsontofile( signfile, masstransactionsign);
 
-						//Put here the actual POST function for a masstransfer
-        	                                request.post({ url: config.node + toolconfigdata.masstxapisuffix,
-								json: masstransactionpayment,
+						var promise_signed_masstxs = promise_sign_masstransaction(signedfile, masstransactionsign)
+
+						//POST request for a masstransfer
+						promise_signed_masstxs.then (function (signed_data) {
+
+						  masstransactionpayment = signed_data
+
+        	                                  request.post({ url: config.node + toolconfigdata.txsbroadcast, json: masstransactionpayment,
                         	                        	headers: { "Accept": "application/json", "Content-Type": "application/json", "api_key": config.apiKey }
-                                        		     }, function(err) {
+                                        		     }, function(err, res, body) {
 								if (err) {
                                                         		console.log(err);
                                                 		} else {
@@ -629,6 +657,24 @@ var doPayment = function(payments, counter, batchid, nrofmasstransfers) {
 
 									console.log(logmessage)
 
+									//Remove sign and signed files after succesfull masstransaction
+									//if (fs.existsSync(signfile)) {
+                                					//	fs.unlink(signfile, (err) => {
+                                        				//		if (err) {
+                                                			//			console.error(err)
+                                                			//			return
+                                        				//		}
+                                					//	})
+                        						//}
+									//if (fs.existsSync(signedfile)) {
+                                					//	fs.unlink(signedfile, (err) => {
+                                        				//		if (err) {
+                                                			//			console.error(err)
+                                                			//			return
+                                        				//		}
+                                					//	})
+                        						//}
+									
 									logobject += logmessage + "\n"
 									masstxarray = []
 									onemasstransferamount = 0
@@ -650,7 +696,8 @@ var doPayment = function(payments, counter, batchid, nrofmasstransfers) {
 										updatepayqueuefile(newpayqueue,batchid)
 									}
                                                 		}
-                                        	});
+                                        	  }); //End request.post
+						}); //End Promise
 					}, timeout) //End function masstransfers
 				} //End for all masstransfers loop
 			}, delayarray[index]) //End function actions for an Asset

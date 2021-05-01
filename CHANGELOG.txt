@@ -21,28 +21,57 @@
 /* =====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES===WAVES====WAVES====
 
 Version 3.1.1
--------------
-- date 4 apr 2021
+--------------
+- date 1 may 2021
 
 - Changes
 
   1. Masspayment tool 'masstx.js'
-     - The tool dumps the payments for every mass transaction in JSON format to a file.
+     
+     - The tool now requests signing for every transaction. This will return a signed json body with a proof.
+       Previous versions has a fixed proof string. 
+
+     - The tool now dumps the payment data for every mass transaction in JSON format to a file.
+       This is a failsave if the payment crashes.
        Reason for this is if a crash or payment failure occurs, it is easier to check and resend the payment.
+       First a 'sign' file is logged with the json data that needs to signed by the node. This is a POST request.
+       The body respons is the 'signed' data and is logged to the 'signed' file.
+
        The log is as follows:
        Suppose the batchid of the payment is 50. There are 250 leasers. At max 100 transactions currently are 
        supported in a mass transaction. The payment for this batch will be spread over 3 mass transactions.
-       Masstx will log three files in the paymentsdone directory (default paymentsDone/ ) :
-       - masstx-payment-50-1.json
-       - masstx-payment-50-2.json
-       - masstx-payment-50-3.json
+       Masstx will log six files in the paymentsdone directory (default paymentsDone/ ) :
+       - masstx-sign-50-1.json
+       - masstx-signed-50-1.json
+       - masstx-sign-50-2.json
+       - masstx-signed-50-2.json
+       - masstx-sign-50-3.json
+       - masstx-signed-50-3.json
 
        If for some reason a mass transfer fails, you can resend it manually with curl or postman.
-       The JSON for the body would be the masstx payment dump file. The anatomy of the POST request would have
+       The JSON for the body would be the masstx-signed file. The anatomy of the POST request would have
        the following details;
        - POST url : http://localhost:6869/assets/masstransfer
-       - json: the masstx-payment-<failed (sub)batch>.json
+       - json: the masstx-signed-<failed (sub)batch>.json
        - headers: { "Accept": "application/json", "Content-Type": "application/json", "api_key": <your API key> }
+
+  2. Config.json
+
+     - Added key/values for mass transaction signing and transaction broadcasting API urls
+       - "txsbroadcast" : "/transactions/broadcast",
+       - "masstxsignapisuffix" : "/transactions/sign",
+
+  3. Forktester.py
+
+     - Checks if a control node unreachable alert is already send to telegram.
+       Previous versions keep on sending alerts after every forktest.
+       Now a file for node-unreachable is logged and only one alert is send.
+       When the node is reachable again, the file is removed and a clear message is send.
+
+- File changes (+ added, - removed, * updated)
+  * config.json
+  * CHANGELOG.txt
+  * README.md
 
 
 Version 3.1

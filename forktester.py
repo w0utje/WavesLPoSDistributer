@@ -373,7 +373,19 @@ def get_blocks(node):
             print(" # Failure for block " + str(blockheight) + " #")
             failcnt += 1
 
-    if failcnt != 0:
+    filename = progname + "." + node[node.find('//')+2:]
+
+    if failcnt != 0: #Failures to get blocks
+
+        filename = filename + ".down"
+
+        if os.path.isfile(filename): #found node down file
+            nodealreadydown = True
+        else: #No nodedown file found, first time down
+            nodealreadydown = False
+            f = open(filename,"w+") #create file to secure reachability problems
+            f.close()
+
         print("\n Warning!")
         print(" There were " + str(failcnt) + " failures to get block data from node '" + node + "'")
         print(" If this happens more often, consider not using this node anymore.")
@@ -388,7 +400,22 @@ def get_blocks(node):
              'Consider marking this node "down" in ' +\
              'config.json, if this is a control node.\n'
 
-        telegram_bot_sendtext(tt)
+        if nodealreadydown == False: #First time node discovered as down, send message
+            telegram_bot_sendtext(tt)
+
+    else: #No failures to get blocks from node
+
+        filename = filename + ".down"
+        if os.path.isfile(filename): #found old node unreachable file
+            os.remove(filename)
+                       
+            tt = '\nMonitoring Alert!\n' +\
+                 '-----------------\n' +\
+                 str(sys.argv[0]) + ' problems.\n' +\
+                 'Node ' + str(node) + "\n" +\
+                 'reachable again.\n'
+
+            telegram_bot_sendtext(tt)
 
     return ordered_objdict
 
