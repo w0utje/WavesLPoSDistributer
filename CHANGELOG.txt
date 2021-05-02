@@ -72,6 +72,8 @@ Version 3.1.1
   * config.json
   * CHANGELOG.txt
   * README.md
+  * masstx.js
+  * forktester.py
 
 
 Version 3.1
