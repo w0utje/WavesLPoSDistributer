@@ -1,4 +1,4 @@
-# WavesLPoSDistributer          v3.1.1
+# WavesLPoSDistributer          v3.2
 A revenue distribution tool for Waves nodes and the leasers
 
 Welcome to Plukkies version of the LPoSdistribution script, 'the lazy' version.
@@ -53,6 +53,7 @@ Release 2.3 has integrations with Amazon AWS S3 buckets.\
 Install the aws sdk -> npm install aws-sdk from within your WavesLPOSdistributer folder.
 You also need to have an Aws account and have the API access credentials installed on your
 machine where you run this WavesLPOSDistributer.
+
 NOTE
 This is only needed if you want to store your html reports on S3!\
 See configfile explanation in chapter ## Installation steps: first time users\
@@ -109,6 +110,8 @@ npm install
     "payoutfilesprefix" : "wavesleaserpayouts",
     "paymentsdonedir" : "paymentsDone/",
     "txbasefee" : "100000",
+    "txscfee" : "500000",
+    "txfee" : "100000",
     "masstransferpertxfee" : "50000",
     "maxmasstransfertxs" : "100",
     "transactiontimeout" : "1000",
@@ -368,7 +371,7 @@ from the the new downloaded version to your current/old version.
 If you use a version that does not have the config.json file yet (it was added in 2.0), then
 you should also configure settings in there. Please see chapter "Installation steps: first time users, point 3"
 where the configuration file and all settings are explained in detail.
-Latest config.json version for 3.1 has added options, so please replace/add config options if upgrading.
+Latest config.json version for 3.2 has added options, so please replace/add config options if upgrading.
 
 ## Installation steps: users that already use one of the original versions of the script (other then Plukkies version)
 If you use other version of the script, like from Marc jansen or w0utje, it's easy migration;

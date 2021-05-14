@@ -1,3 +1,16 @@
+//////////////////////////////////////////////////
+// Some comments
+// Transaction type  8 : Lease
+// Transaction type  9 : LeaseCancel
+// Transaction type 16 : Invoke script
+//                       - stateChanges
+//                         - leases
+//                         - leaseCancels
+//                         - invokes
+//                           - stateChanges
+//                             - leases
+//                             - leaseCancels
+//////////////////////////////////////////////////
 
 const configfile = 'config.json'
 const appngrunfile = 'appng.run' 
@@ -41,6 +54,8 @@ if (fs.existsSync(configfile)) { //configurationfile is found, let's read conten
 	var batchinfofile = toolconfigdata['batchinfofile']
 	var payqueuefile = toolconfigdata['payqueuefile']
 	var payoutfilesprefix = toolconfigdata['payoutfilesprefix']
+	var minscfee = parseInt(toolconfigdata['txscfee'])
+	var mintxfee = parseInt(toolconfigdata['txfee']) 
 }
 else {
      console.log("\n Error, configuration file '" + configfile + "' missing.\n"
@@ -129,10 +144,10 @@ var config = {
     percentageOfBlockrewardToDistribute: blockrewardsharingpercentage
 };
 
-var myLeases = {};
-var myCanceledLeases = {};
+var myLeases = {}; //object, gets all active lease transactions
+var myCanceledLeases = {}; //object, gets all cancelled lease transactions
 
-var currentStartBlock = startscanblock;
+var currentStartBlock = startscanblock; //Which block to start scanning 
 
 var fs=require('fs');
 var prevleaseinfofile = config.startBlockHeight + "_" + config.address + ".json";
@@ -141,12 +156,14 @@ if (fs.existsSync(prevleaseinfofile))
 	console.log("reading " + prevleaseinfofile + " file");
 	var data=fs.readFileSync(prevleaseinfofile);
 	var prevleaseinfo=JSON.parse(data);
-	myLeases = prevleaseinfo["leases"];
-	myCanceledLeases = prevleaseinfo["canceledleases"];
+	myLeases = prevleaseinfo["leases"]; //All lease transactions (type8), can be multiple for one sender
+	myCanceledLeases = prevleaseinfo["canceledleases"]; //All leasecancels (type9), can be multiple for one sender
 	currentStartBlock = config.startBlockHeight;
 }
 
 //do some cleaning
+//After this, var myLeases has the active leasers left from our startblock
+//All leasers that cancelled their lease are removed
 var cleancount = 0;
 for(var cancelindex in myCanceledLeases)
 {
@@ -166,7 +183,7 @@ var mrt = [];
 var myAliases = [];
 var BlockCount = 0;
 var LastBlock = {};
-var myForgedBlocks = [];
+var myForgedBlocks = []; //Array with all blocks that my node forged
 
 /**
   * This method starts the overall process by first downloading the blocks,
@@ -178,7 +195,7 @@ var start = function() {
   console.log('get aliases');
   myAliases = getAllAlias();
     console.log('getting blocks...');
-    var blocks = getAllBlocks();
+    var blocks = getAllBlocks(); //array with all blocks and blockdata of current batch
     console.log('preparing datastructures...');
     prepareDataStructure(blocks);
     console.log('preparing payments...');
@@ -208,75 +225,95 @@ var start = function() {
 
 var prepareDataStructure = function(blocks) {
 
+
     blocks.forEach(function(block,index) { //BEGIN for each block loop
     	var checkprevblock = false;
 	var myblock = false;
         var wavesFees = 0;
 	var blockrewards = 0;
 
-        if (block.generator === config.address) {
-		
-		myForgedBlocks.push(block);
+        if (block.generator === config.address) { //My node is the generator of the block
+		myForgedBlocks.push(block); //Push relevant block to array with all my node blocks
             	checkprevblock = true;
 		myblock = true;
 	}
 
 	var blockwavesfees=0;
 
-        block.transactions.forEach(function(transaction) {
-            		// type 8 are leasing tx
-            		if (transaction.type === 8 && ((transaction.recipient === config.address)|| (myAliases.indexOf(transaction.recipient) > -1) )){
-                		transaction.block = block.height;
-                		myLeases[transaction.id] = transaction;
-            		} else if (transaction.type === 9 && myLeases[transaction.leaseId]) { // checking for lease cancel tx
-                		transaction.block = block.height;
-                		myCanceledLeases[transaction.leaseId] = transaction;
-            		}
+	// Scan through all transactions in a block
+	// 1.  grep type8 lease transactions that are targetted to my node address
+	// 2.  grep type9 leaseCancel transactions that are matched in my node lease array with active lease transactions
+	// 3.  grep type16 transactions
+	// 3.1  - grep statechanges -> lease that are targetted to my node address
+	// 3.2  - grep statechanges -> invokes -> statechanges -> lease  that are targetted to my node address
+	// 3.3  - grep statechanges -> leaseCancel that are matched in my node lease array with active lease transactions
+	// 3.4  - grep statechanges -> invokes -> statechanges -> leaseCancel that are matched in my node lease array with active lease transactions
+	//
+	// NOTE
+	// - All blocks need to be scanned for lease/leasecancel transactions to your node
+	// - Only blocks that mynode secured need to be scanned for fees
 
-			if(myblock) {
+	block.transactions.forEach(function(transaction) {
+
+            		// type 8 is leasing tx
+			// AND if the node address (recipient) is my node or the alias is used and is mynode's name
+            		if (transaction.type === 8 && ((transaction.recipient === config.address)|| (myAliases.indexOf(transaction.recipient) > -1) )){
+                		transaction.block = block.height; //Add key block and set blockheight
+                		myLeases[transaction.id] = transaction; //Add transaction id to mylease array
+
+			// type 9 is leaseCancel tx
+			// AND the lease transaction is found in my array of active leases
+            		} else if (transaction.type === 9 && myLeases[transaction.leaseId]) {
+                		transaction.block = block.height; //Add key block and set blockheight
+                		myCanceledLeases[transaction.leaseId] = transaction; //Add transaction leaseid to array with cancelled leases
+
+			// type 16 with lease and leasecancels by invocation script execution with stateChanges
+            		} else if (transaction.type === 16 && transaction.hasOwnProperty('stateChanges')) { //Type16 and toplevel key 'stateChanges' is present
+
+					get_type16_invoke_leases(transaction); //Get all lease & leasecancel transactions from stateChanges & invoke dApps
+			}
+
+			if(myblock) { //The collected block is generated by my node, collect the fees for the transactions
+
                 		// considering Waves fees
-                		if (!transaction.feeAsset || transaction.feeAsset === '' || transaction.feeAsset === null) {
+                		if (!transaction.feeAsset || transaction.feeAsset === '' || transaction.feeAsset === null) { //This is a Waves transaction
                     			if(transaction.fee < 200000000)  { // if tx waves fee is more dan 2 waves, filter it. probably a mistake by someone
                         			//wavesFees += (transaction.fee*0.4);
-                        			blockwavesfees += transaction.fee;
+                        			blockwavesfees += transaction.fee; //Add up all the Waves transaction fees
                     			} else {
-                        			console.log("Filter TX at block: " + block.height + " Amount: " +  transaction.fee)
+                        			console.log("Filter TX at block: " + block.height + " Amount: " +  transaction.fee) //Do not add up waves fees
                     			}
-                			} else if (block.height > 1090000 && transaction.type === 4) {
-                				blockwavesfees += 100000;
-		  			}
-	}
+                		} else if (block.height > 1090000 && transaction.type === 4) { //Waves Transfer transaction
+                				blockwavesfees += mintxfee; //Add up Waves minimum fee
+		  		}
+			}
       });
+
       wavesFees += Math.round(parseInt(blockwavesfees / 5) * 2);
 
       blockwavesfees=0;
 
-      if(checkprevblock)
-      {
-        if (index > 0)
-        {
-            //console.log("Next: " + blocks[index + 1]);
-            var prevblock = blocks[index - 1];
-            prevblock.transactions.forEach(function(transaction)
-            {
-                // considering Waves fees
-                if (!transaction.feeAsset || transaction.feeAsset === '' || transaction.feeAsset === null) {
-              	if(transaction.fee < 200000000) // if tx waves fee is more dan 2 waves, filter it. probably a mistake by someone
-              	{
-                  	//wavesFees += (transaction.fee*0.6);
-                  	blockwavesfees += transaction.fee;
-                } else {
-  			        console.log("Filter TX at block: " + block.height + " Amount: " +  transaction.fee)
-  		        }
-            } else if (block.height > 1090000 && transaction.type === 4) {
-                blockwavesfees += 100000;
-	      }
+      if(checkprevblock) {
+		if (index > 0) {
+            		//console.log("Next: " + blocks[index + 1]);
+            		var prevblock = blocks[index - 1];
+            		prevblock.transactions.forEach(function(transaction) {
+                		// considering Waves fees
+                		if (!transaction.feeAsset || transaction.feeAsset === '' || transaction.feeAsset === null) {
+              				if(transaction.fee < 200000000) // if tx waves fee is more dan 2 waves, filter it. probably a mistake by someone
+         					{
+                  				//wavesFees += (transaction.fee*0.6);
+                  				blockwavesfees += transaction.fee;
+                			} else {
+  			        		console.log("Filter TX at block: " + block.height + " Amount: " +  transaction.fee)
+  		        		}
+            			} else if (block.height > 1090000 && transaction.type === 4) {
+                			blockwavesfees += mintxfee;
+	      			}
+            		});
+        	}
 
-            });
-        }
-
-      wavesFees += (blockwavesfees - Math.round(parseInt(blockwavesfees / 5) * 2));
-
+      		wavesFees += (blockwavesfees - Math.round(parseInt(blockwavesfees / 5) * 2));
       }
 
       wavesFees = ( wavesFees * config.percentageOfFeesToDistribute / 100 ) //These are the Txs fees with sharing % applied from configfile
@@ -288,8 +325,64 @@ var prepareDataStructure = function(blocks) {
       
       block.wavesFees = wavesFees;
 
+
     }); //END for each block loop
+
 };
+
+
+/**
+ * Method to find all lease and leasecancels in transaction type16 statechanges
+ * params:
+ * - type16txs : transaction object (JSON)
+ */
+var get_type16_invoke_leases = function (type16txs) {
+	
+	//NOTE: prop is the key name
+	//NOTE: type16txs[prop] is the value
+	for ( prop in type16txs) {
+
+		if (prop == 'stateChanges' && prop.length > 0) { //Check leases, leasecancels and invokes
+
+			let la = type16txs[prop]['leases'] //lease array
+			let lca = type16txs[prop]['leaseCancels'] //leasecancel array
+			let ia = type16txs[prop]['invokes'] //invoke script array
+
+			if ( la.length > 0 ) { //Lease transactions found
+
+				// For every lease activation found in array leases, add lease to myLeases array
+				la.forEach(function(lease) {
+					if ( (lease.recipient === config.address) || (myAliases.indexOf(lease.recipient) > -1) ) {
+						lease.block = lease.height
+						myLeases[lease.id] = lease; //Add transaction id with transaction data to mylease array
+					}
+				});
+			} 
+			if ( lca.length > 0 ) { //Lease cancel transactions found
+
+				// For every lease cancel found in array leaseCancel, add leasecancel to myCancelledLeases array
+				lca.forEach(function(leasecancel) {
+					if ( myLeases[leasecancel.id] ) { //Leasecancel id found in active lease array
+						leasecancel.block = leasecancel.height
+						myCanceledLeases[leasecancel.id] = leasecancel; //Add transaction id with transaction data to mycancel lease array
+					}
+				});
+			}
+
+			if (ia.length > 0) { //Found invokes data, check repeat function with new object data
+
+				ia.forEach(function(object,i) { //Loop through invoke array to find 'stateChanges' object
+
+					if ( 'stateChanges' in ia[i] ) {
+						get_type16_invoke_leases(ia[i]); //start function again with new invoke json object
+					}
+					
+				});
+			}
+		}
+	}
+}
+
 
 /**
  * Method that returns all relevant blocks.
@@ -302,6 +395,9 @@ var getAllBlocks = function() {
     //var currentStartBlock = firstBlockWithLeases;
     var blocks = [];
 
+    //Grab blocks in batches of 100
+    //start from currentstartblock (defined in batchinfo.json)
+    //stop at endblock (defined in batchinfo.json)
     while (currentStartBlock < config.endBlock) {
         var currentBlocks;
 

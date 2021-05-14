@@ -33,6 +33,8 @@
 		"payoutfilesprefix" : "wavesleaserpayouts",
 		"paymentsdonedir" : "paymentsDone/",
 		"txbasefee" : "100000",
+		"txscfee" : "500000",
+		"txfee" : "100000",
 		"masstransferpertxfee" : "50000",
 		"maxmasstransfertxs" : "100",
 		"transactiontimeout" : "1000",
