@@ -37,7 +37,7 @@
 		"txfee" : "100000",
 		"masstransferpertxfee" : "50000",
 		"maxmasstransfertxs" : "100",
-		"transactiontimeout" : "1000",
+		"transactiontimeout" : "1500",
 		"txsbroadcast" : "/transactions/broadcast",
 		"masstxsignapisuffix" : "/transactions/sign",
 		"transactionapisuffix" : "/assets/transfer",
