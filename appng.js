@@ -92,7 +92,6 @@ if (fs.existsSync(batchinfofile)) {
 	force_collector_start = 'no' //normal appng start
    } else if (process.argv[2].indexOf('now') != -1) {
 	force_collector_start = 'yes' //force collector start
-	   console.log('found now')
    } else { force_collector_start = 'no' } //all the rest should not be as forced
 
    if (paymentstopblock > lastblockheight && force_collector_start === 'no' ) { //Stopblock  not reached yet, exit
@@ -100,6 +99,8 @@ if (fs.existsSync(batchinfofile)) {
 	let blocksleft = paymentstopblock - lastblockheight
         console.log("\n Current blockheight is " + lastblockheight + ". Waiting to reach " + paymentstopblock + " for next collector round.")
         console.log(" This is approximaly in ~" + Math.round((blocksleft)/60) + " hrs (" + (Math.round((blocksleft/60/24)*100))/100 + " days).\n")
+	console.log(" You can safely force collection start with argument '/now', i.e. 'node appng /now' if you do")
+	console.log(" not want to wait. This will use lastblockheight " + lastblockheight + " as paymentstopblock.\n")
 	
 	fs.unlink(appngrunfile, (err) => { //All done, remove run file which is checked during startup
 		if (err) {
