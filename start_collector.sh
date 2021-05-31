@@ -9,7 +9,7 @@ echo `date`
 echo
 
 # increase stacks and usable memory to 4GB
-$node --stack-size=65565 --max-old-space-size=8192 appng.js
+$node --stack-size=65565 --max-old-space-size=8192 appng.js $1
 
 echo
 echo `date`

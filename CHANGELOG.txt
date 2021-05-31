@@ -20,6 +20,37 @@
  *
 /* =====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES===WAVES====WAVES====
 
+Version 3.2.1
+-------------
+- date 31 May 2021
+
+- Change on collector appng
+  ------------------------------------------------------
+  - you can start appng.js now with argument /now or now: "node appng now"
+    If will force the collector to lower the "paystopblock" from the
+    batchinfo.json file to the current blockheight of the blockchain, minus 1.
+    This is only done if the paystopblock lies in the future.
+    Now you don't have to wait till the blockchain reached your original
+    paystopblock.
+    If you do not add argument 'now', the behavior is just the same as
+    before, that is, report how long to wait before paystopblock is reached 
+    and exit.
+
+    kudos to user ddaqua6 for the usefull request!
+    I make use of it thankfully myself :-)
+
+- Change on start_collector.sh
+  ------------------------------------------------------
+  - Added argument option to start collector with:: start_collector.sh /now
+    see above explanation at collector change.
+
+- File changes (+ added, - removed, * updated)
+  * appng.js
+  * CHANGELOG.txt
+  * README.md
+  * start_collector.sh
+
+
 Version 3.2
 -------------
 - data 14 may 2021

@@ -1,4 +1,4 @@
-# WavesLPoSDistributer          v3.2
+# WavesLPoSDistributer          v3.2.1
 A revenue distribution tool for Waves nodes and the leasers
 
 Welcome to Plukkies version of the LPoSdistribution script, 'the lazy' version.
@@ -416,12 +416,17 @@ blockchain sync status and fork detection if you like.
 After a successful configuration of the tool, start with:
 ```sh
 node appng.js OR start_collector.sh
+
+NOTE1  
+collector started with argument 'now' or '/now' will force collection  
+if the current blockheight of the blockchain is < requested endblock (paystopblock).
+If not add the /now switch, it will exit and report when the stop block is available.
 ```
-NOTE
+NOTE2  
 If you can't start 'start_collector', check if the script has execute 'x' on it.
 If not add with: ```chmod u+x start_collector.sh```
 
-NOTE
+NOTE3  
 The script can consume a serious amount of memory and exits with errors during it's run.
 Therefore I've put 'start_collector.sh' script as starter which runs 'node appng.js' with
 some memory optimized settings.
@@ -435,7 +440,7 @@ These multiple payments jobs can be merged by running the 'txoptimizer.py' tool.
 Txoptimizer.py merges all pending payment jobs into one larger job. It a wonderfull way
 to collect while you don't have much resources on your machine.
 
-NOTE
+NOTE4  
 To run the collector tool every night @1 AM, edit /etc/crontab and put in following line;
 ```sh
 00 01 * * * root cd /home/myuser/WavesLPoSDistributer/ && ./start_collector.sh

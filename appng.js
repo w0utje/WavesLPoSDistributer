@@ -85,9 +85,18 @@ if (fs.existsSync(batchinfofile)) {
    };
    
    let blockchainresponse = request(options.method, options.baseUrl + options.uri, options.headers)
-   let lastblockheight = parseInt(JSON.parse(blockchainresponse.body).height) 
+   let lastblockheight = parseInt(JSON.parse(blockchainresponse.body).height) - 1 //Current blockchain height 
+   let force_collector_start
 
-   if (paymentstopblock > lastblockheight) {
+   if (process.argv[2] === undefined ) { //check if force start argument is given
+	force_collector_start = 'no' //normal appng start
+   } else if (process.argv[2].indexOf('now') != -1) {
+	force_collector_start = 'yes' //force collector start
+	   console.log('found now')
+   } else { force_collector_start = 'no' } //all the rest should not be as forced
+
+   if (paymentstopblock > lastblockheight && force_collector_start === 'no' ) { //Stopblock  not reached yet, exit
+
 	let blocksleft = paymentstopblock - lastblockheight
         console.log("\n Current blockheight is " + lastblockheight + ". Waiting to reach " + paymentstopblock + " for next collector round.")
         console.log(" This is approximaly in ~" + Math.round((blocksleft)/60) + " hrs (" + (Math.round((blocksleft/60/24)*100))/100 + " days).\n")
@@ -100,7 +109,11 @@ if (fs.existsSync(batchinfofile)) {
         })
         return;
 
-   } else { var backupbatchinfo = fs.writeFileSync(batchinfofile + ".bak",fs.readFileSync(batchinfofile)) }  //Create backup of batchdatafile
+   } else if (paymentstopblock > lastblockheight && force_collector_start === 'yes' ) { //Force collector start with current blockchain height
+	   paymentstopblock = lastblockheight //Start collector with current blockheight as stop block
+   }
+
+   var backupbatchinfo = fs.writeFileSync(batchinfofile + ".bak",fs.readFileSync(batchinfofile)) //Create backup of batchdatafile
 
 } 
 else { //Did not find batchinfofile, so it's probably first collector run
