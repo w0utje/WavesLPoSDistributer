@@ -3,6 +3,7 @@
 		"paymentnode_api" : "http://localhost:6869",
 		"paymentnode_apikey" : "<<your api key here>>",
 		"querynode_api" : "http://localhost:6869",
+		"query_pause" : "0",
 		"nodename" : "my node",
 		"feedistributionpercentage" : "90",
 		"blockrewarddistributionpercentage" : "90",
@@ -73,6 +74,7 @@
 		"configinfo" : "/debug/configinfo",
 		"node_state" : "/debug/info",
 		"lastblock" : "/blocks/last",
-		"blockchainheight" : "/blocks/height"
+		"blockchainheight" : "/blocks/height",
+		"leaseinfo" : "/transactions/info/"
 	}
 }

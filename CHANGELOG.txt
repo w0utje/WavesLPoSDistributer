@@ -20,6 +20,25 @@
  *
 /* =====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES===WAVES====WAVES====
 
+Version 3.2.1.1
+---------------
+- data 4 June 2021
+
+- BUGS solved
+  ------------------------------------------------------
+  - Waves full node software had some API changes.
+    
+    /leasing/active/{address} returns an array of structures containing lease parameters instead of array of Lease transactions.
+    
+    This impacted informational tool nodeinfo.py
+
+- File changes (+ added, - removed, * updated)
+  * nodeinfo.py
+  * CHANGELOG.txt
+  * README.md
+  * config.json
+
+
 Version 3.2.1
 -------------
 - date 31 May 2021

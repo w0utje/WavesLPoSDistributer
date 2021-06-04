@@ -105,7 +105,11 @@ def get_blockchaindata ():
              
             sender = lease['sender']
             amount = lease['amount']
-            timestamp = lease['timestamp'] # Timestamp current lease (unix time)
+            leaseid = lease['id']
+            uri = au['leaseinfo'] + leaseid
+            leaseinfo = get_jsondata (qn, uri ) ##Query for transaction data
+            if pc['query_pause'] != "": time.sleep(float(pc['query_pause'])) ##Add some pause between queries
+            timestamp = leaseinfo['timestamp'] # Timestamp current lease (unix time)
             mytime = get_time(timestamp) # Timestamp in my custom readable format
             
             if oldestlease == 0:

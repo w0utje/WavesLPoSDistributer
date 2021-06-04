@@ -1,5 +1,5 @@
-# WavesLPoSDistributer          v3.2.1
-A revenue distribution toolset for Waves nodes and the leasers
+# WavesLPoSDistributer          v3.2.1.1
+A revenue distribution tool for Waves nodes and the leasers
 
 Welcome to Plukkies version of the LPoSdistribution script, 'the lazy' version.
 This version enhances the ease of use and creates a 'one stop touch' for the user.
@@ -81,6 +81,7 @@ npm install
     "paymentnode_api" : "http://localhost:6869",
     "paymentnode_apikey" : "<<your api key here>>",      <-- mandatory value (also remove << and >> chars) 
     "querynode_api" : "http://localhost:6869",
+    "query_pause" : "0",
     "nodename" : "<your node name>",
     "feedistributionpercentage" : "90",
     "blockrewarddistributionpercentage" : "80",
@@ -148,7 +149,8 @@ npm install
      "configinfo" : "/debug/configinfo",
      "node_state" : "/debug/info",
      "lastblock" : "/blocks/last",
-     "blockchainheight" : "/blocks/height"
+     "blockchainheight" : "/blocks/height",
+     "leaseinfo" : "transactions/info/"
    }
 }
 ```
@@ -175,6 +177,11 @@ Here's a clarification of all key/value pairs;
    This is the node (name or ip address) and tcp port of the API server where you run your queries to.
    If you run the LPOSdistributer scripts on your forging node itself, this will be the default (localhost).
    If you run the script on another host, then you use the external ip address of your forging node here.
+ 
+ - "query_pause"
+   How many seconds to wait between queries. Some tools, are looping through API queries. 
+   If you make use of external nodes, instead of your localhost, you can offload the massive 
+   queries qwith a pause.
  
  - "nodename"
    This is a textual name identifying your node. It's just a description used in some logging
