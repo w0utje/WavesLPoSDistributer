@@ -20,6 +20,21 @@
  *
 /* =====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES===WAVES====WAVES====
 
+Version 3.2.1.2
+---------------
+- date 25 June 2021
+
+- OPTIMIZED LOGGING UPDATE
+  ------------------------------------------------------
+  - Updated collector appng,js by adding extra JSON object logging
+    If the collector finds a type16 lease or leaseCancel transaction,
+    it will add JSON info to collector file : "type" : 16
+
+- File changes (+ added, - removed, * updated)
+  * appng.js
+  * CHANGELOG.txt
+
+
 Version 3.2.1.1
 ---------------
 - data 4 June 2021

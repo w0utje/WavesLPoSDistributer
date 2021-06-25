@@ -368,6 +368,7 @@ var get_type16_invoke_leases = function (type16txs) {
 				la.forEach(function(lease) {
 					if ( (lease.recipient === config.address) || (myAliases.indexOf(lease.recipient) > -1) ) {
 						lease.block = lease.height
+						lease.type = 16 //Add type 16 key informational, cause that info is missing in lease object
 						myLeases[lease.id] = lease; //Add transaction id with transaction data to mylease array
 					}
 				});
@@ -378,6 +379,7 @@ var get_type16_invoke_leases = function (type16txs) {
 				lca.forEach(function(leasecancel) {
 					if ( myLeases[leasecancel.id] ) { //Leasecancel id found in active lease array
 						leasecancel.block = leasecancel.height
+						leasecancel.type = 16//Add type 16 key informational, cause that info is missing in lease object
 						myCanceledLeases[leasecancel.id] = leasecancel; //Add transaction id with transaction data to mycancel lease array
 					}
 				});
