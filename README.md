@@ -1,4 +1,4 @@
-# WavesLPoSDistributer          v3.2.1.1
+# WavesLPoSDistributer          v3.2.1.3
 A revenue distribution tool for Waves nodes and the leasers
 
 Welcome to Plukkies version of the LPoSdistribution script, 'the lazy' version.
@@ -166,8 +166,12 @@ Here's a clarification of all key/value pairs;
    This is the node on which you will execute your payment transactions (your forging node)
  
  - "paymentnode_apikey"
-   The API key of your forging node. This key is also configured in the configuration file of your
-   Waves node configurtion file.
+   The API password of your forging node. Put it as PLAINTEXT in the config.json file!
+   Else the payments will fail.
+
+   NOTE
+   This is the same password you need to use in the configfile of your Waves forging node,
+   but needs to be coded as base58 string in the node config file.
    
    WARNING
    keep it safe and confidential to you. With the key you can POST transactions!

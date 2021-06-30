@@ -456,6 +456,7 @@ def writelogfile(): #function that writes new logfile for first job
     
     textblock += forgedblockstext + " " + str(blocks)
     textblock += "\nLeasers : " + str(leasers)
+    textblock += "\nGenerating balance : " + str(generatingbalance)
     textblock += "\nPayment ID of batch session: " + str(int(firstjobid))
     textblock += "\n" + startblocktext + " " + str(int(startblock))
     textblock += "\n" + stopblocktext + " " + str(int(stopblock))
@@ -477,6 +478,25 @@ def writelogfile(): #function that writes new logfile for first job
     logfile = open(filename, 'w') #write logdata to file
     logfile.write(textblock)
     logfile.close()
+
+
+## Function to Query node with API request
+## return json.data
+## params:
+## - node : http(s)://node:port where api server can be reached
+## - uri : /the/uri/to/query
+def get_api_http_request(node, uri):
+
+    myurl = node + uri
+
+    try:
+        urlget = urllib.request.urlopen(myurl)
+        jsondata = json.loads(urlget.read())
+
+    except:
+        jsondata = {}
+
+    return jsondata
 
 
 ## Function to get_jsondata
@@ -528,8 +548,11 @@ with open(configfile, "r") as json_file:     # read and set variables from confi
     nopayoutaddresses = jsonconfigdata["paymentconfig"]["nopayoutaddresses"]
     nodewallet = jsonconfigdata["paymentconfig"]["leasewallet"]
     blockheaders_suffix = jsonconfigdata["forktoolsconfig"]["blockheaders"]
+    balanceuri = (jsonconfigdata['api_uris']['balances']).replace('{address}', nodewallet) # API uri's from configfile
 
 errorchecks()
+
+generatingbalance = round(get_api_http_request(querynode, balanceuri)['generating'] / math.pow(10,8)) ##GET generating balance of all leasers
 
 with open(payqueuefile, "r") as json_file:   # read the queue file with pending payment jobs
     payqueuelist = json.load(json_file)

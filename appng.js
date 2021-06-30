@@ -37,6 +37,7 @@ if (fs.existsSync(configfile)) { //configurationfile is found, let's read conten
 
 	toolconfigdata = jsonconfiguration['toolbaseconfig']
 	paymentconfigdata = jsonconfiguration['paymentconfig']
+	apiuris = jsonconfiguration['api_uris']
 
 	//define all vars related to the payment settings
 	var myquerynode = paymentconfigdata['querynode_api']
@@ -56,12 +57,15 @@ if (fs.existsSync(configfile)) { //configurationfile is found, let's read conten
 	var payoutfilesprefix = toolconfigdata['payoutfilesprefix']
 	var minscfee = parseInt(toolconfigdata['txscfee'])
 	var mintxfee = parseInt(toolconfigdata['txfee']) 
+	var balancesuri = (apiuris['balances']).replace('{address}', myleasewallet)
 }
 else {
      console.log("\n Error, configuration file '" + configfile + "' missing.\n"
 		+" Please get a complete copy of the code from github. Will stop now.\n");
      return //exit program
 }
+
+let generatingbalance = JSON.parse(request ( "GET", myquerynode + balancesuri, { json: true } ).body).generating //GET generating balance of wallet
 
 if (fs.existsSync(batchinfofile)) {
 
@@ -685,11 +689,13 @@ var pay = function() {
 		console.log(err);
 	  }
     });
-   
+
     // Create logfile with paymentinfo for reference and troubleshooting 
     fs.writeFile(config.filename + config.paymentid + ".log",
 	"total Waves fees: " + (totalfees/100000000).toFixed(8) + " total MRT: " + totalMRT + "\n"
 	+ "Total blocks forged: " + BlockCount + "\n"
+	+ "Active leasers: " + Object.keys(myLeases).length + "\n"
+	+ "Generating balance: " + Math.round(generatingbalance / Math.pow(10, 8)) + "\n"
 	+ "NO PAYOUT Waves: " + (nopaywaves/100000000).toFixed(8) + "\n"
 	+ "NO PAYOUT MRT: " +  nopaymrt.toFixed(2) + "\n"
 	+ "Payment ID of batch session: " + config.paymentid + "\n"
