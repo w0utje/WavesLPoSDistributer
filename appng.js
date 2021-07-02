@@ -27,7 +27,7 @@ if ( fs.existsSync(appngrunfile) ) {
                     "Normally if collector sessions run 100% fine, this alert should not be given.\n" +
                     "Check your logs and if everything is fine, delete the crashfile: '" + appngrunfile + "'\n" +
                     "\nGoodbye now!\n")
-        //process.exit() //Terminate
+        process.exit() //Terminate
 } else { fs.closeSync(fs.openSync(appngrunfile, 'w')) }
 
 if (fs.existsSync(configfile)) { //configurationfile is found, let's read contents and set variables
