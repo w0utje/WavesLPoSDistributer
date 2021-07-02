@@ -348,9 +348,6 @@ var getAllBlocks = function() {
 
             	if (block.height <= config.endBlock) { //Block height falls within collect range
 
-			if (block.height === lastblockincurrentblocks) { //Keep last block if we need it for prevblock fee collection
-			}
-        		
 			if (block.generator === config.address) { //My node is the generator of the block
 				myblock = true;
 				if (cnt>0) { checkprevblock = true } //Do not check previous block if this is the startblock
