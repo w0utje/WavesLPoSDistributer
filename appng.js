@@ -317,8 +317,6 @@ var getAllBlocks = function() {
     //stop at endblock (defined in batchinfo.json)
     while (currentStartBlock < config.endBlock) { //START loop to get all blocks
 
-	var lastblockincurrentblocks;
-
 	if (cnt>0) { keeplastblock = currentBlocks.slice(-1)[0] } //Set the last block as available as previous block for the next batch collection
 
         if (currentStartBlock + 99 < config.endBlock) {
@@ -328,7 +326,6 @@ var getAllBlocks = function() {
                     'Connection': 'keep-alive'
                 }
             }).getBody('utf8'));
-	    lastblockincurrentblocks = currentStartBlock + 99;
         } else {
             console.log('getting blocks from ' + currentStartBlock + ' to ' + config.endBlock);
             currentBlocks = JSON.parse(request('GET', config.node + '/blocks/seq/' + currentStartBlock + '/' + config.endBlock, {
@@ -336,7 +333,6 @@ var getAllBlocks = function() {
                     'Connection': 'keep-alive'
                 }
             }).getBody('utf8'));
-	    lastblockincurrentblocks = config.endBlock;
         }
 
         currentBlocks.forEach(function(block, index) { //For each block within the batch of 100 blocks
