@@ -20,6 +20,75 @@
  *
 /* =====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES===WAVES====WAVES====
 
+Version 4.0
+---------------
+- date 06 Jul 2021
+
+- OPTIMIZED MEMORY USAGE, HUGE IMPROVEMENT !
+  ------------------------------------------
+  This version has a huge improvement in the way the collector appng.js consumes the available memory.
+  In previous versions if your VM is low on memory (like 4GB),
+  the appng.js would crash if you would collect to much blocks in one run.
+  With this release, the collector requests and analyzes in batches of 100 blocks and
+  then only stores the relevant blocks. In previous versions if you would collect 20000 blocks
+  then the collector would store all 20000 blocks, analyze them and add some relevant data.
+  The memory usage would increase if the blockwindowsize increased and if the VM is 
+  low on memory the collector would crash.
+  While this was solved by lowering the blockwindowsize in the config.json file and spreading
+  your collector sessions over multiple, it wasn't optimal.
+  With this release you can run collector runs with large blockwindowsizes. I succesfully collected
+  150000 (150k !!) blocks in one run on a VM with only 8GB of memory.
+
+  usage:
+  Set your desired value in config.json for key : "blockwindowsize" : "Your desired value".
+  I.e, set to 15000 and appng.js will collect 15000 blocks in one go without problems! :-)
+
+  NOTE
+  If you change it in the config.json file, the next collector run will still use
+  the value of 'paystopblock' in the batchinfo.json file. Subsequent runs use config.json value.
+
+- NEW FEATURES
+  ------------
+  1. Recovery option for partly failed masstransactions (masstx.js)
+     Added option to do a manual resend of a failed masstransaction.
+     It can happen that a masstransaction fails.
+     A payment works as follows;
+     The payment processor masstx, does a signing request for a transaction.
+     The node signs the request and sends the signed respons to the masstx script.
+     This data is saved in masstx-signed-<batch>-<subid>.json in the event of failure.
+     If a transaction fails, an alert is raised and the signed file name is reported to
+     screen and social meda (if turned on in config.json).
+
+     Now you can start the payment as follows: node masstx <signed file>
+     This will resend the specific masstx transaction that failed.
+
+     NOTE
+     Be sure to resend within 12 mins else the node will reject based on the timedstamp.
+
+  2. Added telegram alerting when payments fail
+
+  3. Added key "servicename" : "value" in config.json
+     This value is used in reports and logging. Use a meaningfull name of your waves service.
+
+  4. config key "nodename" : "value" is used in alerts
+     If you have multiple waves nodes, it becomes clear which node send the alert
+
+- ROADMAP
+  - Migrate deferred library 'request' to a new library
+  - incorporate airdrop tool
+  - Release docker container version of WavesLPOSdistributer
+  - Developing WLDaaS
+  - Add manual option 'signing' of failed mass transaction which is not send within the 
+    expiry interval (currently 12 mins)
+
+- File changes (+ added, - removed, * updated)
+  * appng.js
+  * masstx.js
+  * txoptimizer.py
+  * config.json
+  * CHANGELOG.txt
+  * README.md
+
 
 Version 3.2.1.3
 ---------------

@@ -23,6 +23,9 @@ alerts and store reports in the Cloud!
 - Execute forktesting (forktester.py --help more info)
 - Collect usefull info about your node and leasers with nodeinfo.py tool
 
+See CHANGELOG.txt for latest release notes!
+
+
 Many thanks to original version of Marc Jansen and the fork of W0utje!
 
 Donations are welcome if you like this version of the script: 'The lazy' version
@@ -32,6 +35,7 @@ Donations are welcome if you like this version of the script: 'The lazy' version
   - you can LEASE your Waves to;
     - alias '**plukkieforger**' or '**plukkieleasing**'
     - address '**3P7ajba4wWLXq6t1G8VaoaVqbUb1dDp8fm4**'
+
 
 ## Installation steps: prerequisits
 First of all, you need to install Node.js (https://nodejs.org/en/) and npm.
@@ -83,6 +87,7 @@ npm install
     "querynode_api" : "http://localhost:6869",
     "query_pause" : "0",
     "nodename" : "<your node name>",
+    "servicename" : "Your Waves Brand Name",
     "feedistributionpercentage" : "90",
     "blockrewarddistributionpercentage" : "80",
     "mrtperblock" : "0",
@@ -189,6 +194,9 @@ Here's a clarification of all key/value pairs;
  
  - "nodename"
    This is a textual name identifying your node. It's just a description used in some logging
+
+ - "servicename"
+   This is a descriptive name of your Waves brand. It shows up in some reports.
  
  - "feedistributionpercentage"
    How many percent of the transaction fees in your forged blocks, are you willing to share with
@@ -438,18 +446,10 @@ If you can't start 'start_collector', check if the script has execute 'x' on it.
 If not add with: ```chmod u+x start_collector.sh```
 
 NOTE3  
-The script can consume a serious amount of memory and exits with errors during it's run.
-Therefore I've put 'start_collector.sh' script as starter which runs 'node appng.js' with
-some memory optimized settings.
-For me it works with tweaks to 65KB of stack memory and 8GB of available RAM.
-So use 'start_collector.sh' if you run into problems and tweak to your available RAM.
-If it keeps on exitting, then shrink the block batchsize that are collected during one batch.
-This way multiple smaller batchsizes will be collected and consume less memory.
-To decrease the initial batchsize, edit file config.json and set "blockwindowsize" smaller.
 With smaller collector batches, you get multiple pending payments in the payment queue.
 These multiple payments jobs can be merged by running the 'txoptimizer.py' tool.
-Txoptimizer.py merges all pending payment jobs into one larger job. It a wonderfull way
-to collect while you don't have much resources on your machine.
+Txoptimizer.py seeks for duplicate recipient addresses and merges all pending payment 
+jobs into one larger job. 
 
 NOTE4  
 To run the collector tool every night @1 AM, edit /etc/crontab and put in following line;
@@ -516,7 +516,12 @@ All batchIDs are sequencially read from the payment queue and the transactions a
 When a job finishes, the batchID is removed from the payqueue.dat and the three wavesleaserpayoutX.* files
 are moved to the archival directory (default paymentsDone/).
 
-NOTE massPayment.js
+NOTE masstx.js
+If there is a failed transaction of a masstransaction, make note of the batch and sub-id of the transaction.
+Then you can resend it with command : node masstx <masstx-signed-X-Y.json, where X is batch and Y sub-job.
+See CHANGELOG.txt for more details.
+
+NOTE massPayment.js <<<< Better use masstx for payments.
 If there would be a crash of the system, script or other transaction breaking interruption,
 make note of the last succesfull transaction counter and the batchID. Then edit the massPayment.js
 file and change these values for:

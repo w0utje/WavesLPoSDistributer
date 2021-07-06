@@ -58,6 +58,7 @@ if (fs.existsSync(configfile)) { //configurationfile is found, let's read conten
 	var minscfee = parseInt(toolconfigdata['txscfee'])
 	var mintxfee = parseInt(toolconfigdata['txfee']) 
 	var balancesuri = (apiuris['balances']).replace('{address}', myleasewallet)
+	var servicename = paymentconfigdata['servicename']
 }
 else {
      console.log("\n Error, configuration file '" + configfile + "' missing.\n"
@@ -212,16 +213,13 @@ var myForgedBlocks = []; //Array with all blocks that my node forged
 var start = function() {
   console.log('get aliases');
   myAliases = getAllAlias();
-    console.log('getting blocks...');
+    console.log('Retreive blocks and collecting lease info and transaction fees...');
     var blocks = getAllBlocks(); //array with all blocks and blockdata of current batch
-    //console.log('preparing datastructures...');
-    //prepareDataStructure(blocks);
-    console.log('preparing payments...');
 
+    console.log('preparing payments...');
     myForgedBlocks.forEach(function(block) {
 
         if (block.height >= config.startBlockHeight && block.height <= config.endBlock) {
-//console.log(block)
 
             var blockLeaseData = getActiveLeasesAtBlock(block);
             var activeLeasesForBlock = blockLeaseData.activeLeases;
@@ -562,7 +560,7 @@ var pay = function() {
 "<div class=\"container\">" +
 "  <h3>Fees between blocks " + config.startBlockHeight + " - " + config.endBlock + ", Payout #" + config.paymentid + ", (Share Tx fees " + config.percentageOfFeesToDistribute + "% / Blockreward " + config.percentageOfBlockrewardToDistribute + "%)</h3>" +
 "  <h4>(LPOS address: " + config.address + ")</h4>" +
-"  <h5>[ " + date + " ]: Hi all, again a short update of the fee's earned by the wavesnode 'Plukkieforger'. Greetings!</h5> " +
+"  <h5>[ " + date + " ]: Hi all, again a short update of the fee's earned by the waves service '" + servicename + "'. Greetings!</h5> " +
 "  <h5>You can always contact me by <a href=\"mailto:" + mailto + "\">E-mail</a></h5>" +
 "  <h5>Blocks forged: " + BlockCount + "</h5>" +
 "  <table class=\"table table-striped table-hover\">" +

@@ -52,6 +52,7 @@ with open(configfile, "r") as json_file:
     tg_chatid = tgconf['telegram_chat_id']
     tg_baseuri = tgconf['telegram_api']
     APIkey = pconf["paymentnode_apikey"]
+    nodename = pconf['nodename']
 
 
 # Function to test what options used atr script start
@@ -164,7 +165,8 @@ def check_ongoing_rollback():
         tt = '\n Monitoring Alert!\n' +\
              ' -----------------\n' +\
              ' Found rollback file : ' + rollbackfile +\
-             ' Rollback active or stale file left behind?\n'
+             ' \nNode : ' + nodename +\
+             ' \nRollback active or stale file left behind?\n'
 
         telegram_bot_sendtext(tt) 
 
@@ -239,7 +241,7 @@ def check_forkfile(): #Check if forkfile already exists
             tt = '\nMonitoring Alert!\n' +\
                  ' -----------------\n' +\
                  ' Rollback to block "' + str(rollbackheight) + '" requested.\n' +\
-                 ' node : ' + mynode + '\n'
+                 ' node : ' + nodename + '\n'
 
             telegram_bot_sendtext(tt)
                 
@@ -250,7 +252,7 @@ def check_forkfile(): #Check if forkfile already exists
             tt = '\nMonitoring Alert!\n' +\
                  ' -----------------\n' +\
                  ' Rollback to block "' + str(rollbackheight) + '" finished.\n' +\
-                 ' node : ' + mynode + '\n'
+                 ' node : ' + nodename + '\n'
 
             telegram_bot_sendtext(tt)
         
@@ -274,6 +276,7 @@ def check_forkfile(): #Check if forkfile already exists
             print("\n Forked at : " + time.ctime(os.path.getctime(forkfile)))
 
             telegram_text = '\nFORK WARNING!' +\
+                        '\nNode : ' + nodename +\
                         '\n-----------------' +\
                         '\nRollback to block ' + str(rollbackheight) +\
                         '\nForktime: ' + time.ctime(os.path.getctime(forkfile)) +\
@@ -322,7 +325,8 @@ def set_startblock(node):
                  str(sys.argv[0]) + ' terminated!\n' +\
                  'Can not get lastblock from\n' +\
                  'node ' + node + '.\n' +\
-                 '\nNo fork testing done!'
+                 'node : ' + nodename +\
+                 '\n\nNo fork testing done!'
 
             telegram_bot_sendtext(tt)
 
@@ -335,7 +339,8 @@ def set_startblock(node):
              '-----------------\n' +\
              str(sys.argv[0]) + ' terminated!\n' +\
              'My node "' + node + '" is unreachable!' +\
-             '\nNo fork testing done!'
+             '\nnode : ' + nodename +\
+             '\n\nNo fork testing done!'
 
         telegram_bot_sendtext(tt)
 
@@ -398,7 +403,8 @@ def get_blocks(node):
              'Node ' + str(node) + "\n" +\
              'reachability problems.\n' +\
              'Consider marking this node "down" in ' +\
-             'config.json, if this is a control node.\n'
+             'config.json, if this is a control node.\n' +\
+             'source node : ' + nodename + '\n'
 
         if nodealreadydown == False: #First time node discovered as down, send message
             telegram_bot_sendtext(tt)
@@ -413,7 +419,8 @@ def get_blocks(node):
                  '-----------------\n' +\
                  str(sys.argv[0]) + ' problems.\n' +\
                  'Node ' + str(node) + "\n" +\
-                 'reachable again.\n'
+                 'reachable again.\n' +\
+                 'source node : ' + nodename + '\n'
 
             telegram_bot_sendtext(tt)
 
@@ -445,7 +452,8 @@ def get_controlnode_blocks(nodearray):
        
         tt = '\nMonitoring Alert!\n' +\
              '-----------------\n' +\
-             str(sys.argv[0]) + ' problems.\n'
+             str(sys.argv[0]) + ' problems.\n' +\
+             'node : ' + nodename + '\n'
         
         if len(cn) == 0: #No nodes in configfile added
             
@@ -531,7 +539,8 @@ def compare_keys_headers(mnkeys, cnkeys, mnblocks):
              '------------------\n' +\
              ' Block heights collected are not in sync.\n' +\
              ' ' + str(nodekeydiff) + ' nodes deviate from my node.\n' +\
-             ' Nodes are Out of Sync.\n'
+             ' Nodes are Out of Sync.\n' +\
+             ' source node : ' + nodename + '\n'
 
         telegram_bot_sendtext(tt)
     
@@ -622,7 +631,8 @@ def fork_actions():
              'Not clear if my node forked or the control node\n' +\
              'suggestion:\n' +\
              'Add more control nodes or explore\n' +\
-             'logs of your node ' + str(mynode) + "'.\n"
+             'logs of your node ' + str(mynode) + "'.\n" +\
+             'node : ' + nodename + '\n'
         
     elif acncnt > 1 and acncnt == forkcounter: #multiple control nodes and counted a fork for every node
 
@@ -631,6 +641,7 @@ def fork_actions():
         print(" =================================================\n" +\
               " Warning! My node '" + mynode + "' forked!!!\n" +\
               " Need Rollback to block '" + str(rollbackheight) + "'\n" +\
+              " node : " + nodename + '\n' +\
               " =================================================\n")
         
         f = open(forkfile,"w+") #create forkfile with rollback blockheight
@@ -640,13 +651,15 @@ def fork_actions():
              '-----------------\n' +\
              'My Waves node fork at ' + str(currentdate()) + '\n' +\
              "node : '" + mynode + '"\n' +\
-             'rollback to block ' + str(rollbackheight) + ' in ' + str(hoursleft) + ' hrs.\n'
+             'rollback to block ' + str(rollbackheight) + ' in ' + str(hoursleft) + ' hrs.\n' +\
+             'node : ' + nodename + '\n'
 
     else: #Multiple control nodes and counted more then one forks
         print(" ====================================================\n" +\
               " Detected '" + str(forkcounter) + "' forked nodes.\n" +\
               " However, there are '" + str(acncnt) + "' active control nodes.\n" +\
               " My node is not on fork, take action for control nodes.\n" +\
+              " node : " + nodename + '\n' +\
               " ====================================================\n" )
 
         tt = '\nMonitoring Alert!\n' +\
@@ -654,7 +667,8 @@ def fork_actions():
              'Detected "' + str(forkcounter) + '" forked nodes!\n' +\
              'However, there are "' + str(acncnt) + '" active control nodes.\n' +\
              'My node is NOT on fork. Take action for control nodes.\n' +\
-             'rollback block : ' + str(rollbackheight) + '\n'
+             'rollback block : ' + str(rollbackheight) + '\n' +\
+             'source node : ' + nodename + '\n'
 
     telegram_bot_sendtext(tt)
 
@@ -669,7 +683,8 @@ def fork_actions():
         tt = '\nMonitoring Alert!\n' +\
              ' -----------------\n' +\
              ' Rollback to block "' + str(rollbackheight) + '" requested.\n' +\
-             ' node : ' + mynode + '\n'
+             ' node : ' + mynode + '\n' +\
+             ' node : ' + nodename + '\n'
 
         telegram_bot_sendtext(tt)
 
@@ -684,7 +699,8 @@ def fork_actions():
         tt = '\nMonitoring Alert!\n' +\
              ' -----------------\n' +\
              ' Rollback to block "' + str(rollbackheight) + '" finished.\n' +\
-             ' node : ' + mynode + '\n'
+             ' node : ' + mynode + '\n' +\
+             ' node : ' + nodename + '\n'
 
         telegram_bot_sendtext(tt)
         

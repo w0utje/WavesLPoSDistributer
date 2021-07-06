@@ -5,6 +5,7 @@
 		"querynode_api" : "http://localhost:6869",
 		"query_pause" : "0",
 		"nodename" : "my node",
+		"servicename" : "Your Waves Brand Name",
 		"feedistributionpercentage" : "90",
 		"blockrewarddistributionpercentage" : "90",
 		"mrtperblock" : "0",

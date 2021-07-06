@@ -1,12 +1,15 @@
 
 var fs = require('fs');
 var request = require('request');
-const readline = require('readline');
+var syncrequest = require('sync-request');
 
+const readline = require('readline');
+const readlinesync = require('readline-sync');
 const configfile = 'config.json'
 const masstxrunfile = 'masstx.run'
 const forgedblockstext = "blocks forged:"
 const distributiontext = "Distribution:"
+
 
 if (fs.existsSync(configfile)) { //configurationfile is found, let's read contents and set variables
 
@@ -15,10 +18,12 @@ if (fs.existsSync(configfile)) { //configurationfile is found, let's read conten
 
         toolconfigdata = jsonconfiguration['toolbaseconfig']
         paymentconfigdata = jsonconfiguration['paymentconfig']
-
+	apiuridata = jsonconfiguration['api_uris']
+	tgconf = jsonconfiguration['telegramconfig']
 
         //define all vars related to the payment settings
         var myquerynode = paymentconfigdata['paymentnode_api']
+	var readnode = paymentconfigdata['querynode_api']
         var mailto = paymentconfigdata['mail']
 	var sm = paymentconfigdata['socialmedia']
 
@@ -28,6 +33,9 @@ if (fs.existsSync(configfile)) { //configurationfile is found, let's read conten
         var payoutfilesprefix = toolconfigdata['payoutfilesprefix']
 	var socialmediafile = toolconfigdata['socialmediafile']
 	var nodename = paymentconfigdata['nodename']
+
+	//define all api uris
+	var txinfoprefix = apiuridata['txinfo']
 
 }
 else {
@@ -51,6 +59,7 @@ if ( paymentconfigdata['payreports'] ) { //payreports keys for report upload is 
 		    "* You miss nice features to automatically upload your leasing reports to Cloud providers,\n" +
 		    "* or to a webserver folder. Better download the latest configfile from Github.\n")
 }
+
 const paymentqueuefile = payqueuefile //Queue file with all payment ids to be processed
 const transactiontimeout = parseInt(toolconfigdata.transactiontimeout) //Msecs to wait between every transaction posted
 const paymentsdonedir = toolconfigdata.paymentsdonedir //Where to move files after processing
@@ -59,6 +68,19 @@ const coins = toolconfigdata.relevantassets //Which coins we take into considera
 const transferfee = parseInt(toolconfigdata.txbasefee)
 const masstransferfee = parseInt(toolconfigdata.masstransferpertxfee)
 const masstransferversion = parseInt(toolconfigdata.masstransferversion)
+
+const telegramconfig = { tg 	    : tgconf['use'],
+		  	 tg_token   : tgconf['telegram_token'],
+    			 tg_chatid  : tgconf['telegram_chat_id'],
+    			 tg_baseuri : tgconf['telegram_api'] }
+
+
+/* This is the end message shown */
+const endmessage = "\n If you enjoy this script, Waves or tokens on Waves are welcome as a gift;\n\n" +
+                                    "   - wallet alias: 'donatewaves@plukkie'\n" +
+                                    "   - wallet address: '3PKQKCw6DdqCvuVgKtZMhNtwzf2aTZygPu6'\n\n" +
+                                    " Happy forging!\n"
+
 
 // THIS CONST VALUE IS NEEDED WHEN THE PAYMENT PROCESS HALTS OR CRASHES
 // Just change the batchidstart value to the BatchID that was active when the crash occured,
@@ -81,6 +103,21 @@ var totalyesnowaves = 0 //total forged waves all batches
 var roundedwaves = 0 //total waves all batches for pay is "yes"
 var timestamp = new Date()
 var mydate = ("0" + timestamp.getDate()).slice(-2) + "-" + ("0" + (timestamp.getMonth()+1)).slice(-2) + "-" + timestamp.getFullYear()
+var txscheckarray = [] //array with the mass transaction ids to be validated after payment
+
+
+
+/* Method that sends telegram message
+ * arguments:
+ * - message : text message to send
+ */
+function tg (message) {
+
+	let uri = telegramconfig.tg_baseuri + telegramconfig.tg_token + '/sendMessage?chat_id=' + telegramconfig.tg_chatid + '&parse_mode=Markdown&text=' + message
+	let getrespons = syncrequest ('GET', uri)
+}
+
+
 
 //Function to write the social media update message
 //to a file. This message can be picked up by another
@@ -289,6 +326,33 @@ function roundup(number, upper) {
 */
 function testcases () {
 
+	if (process.argv[2] != undefined && process.argv[2].indexOf('masstx-signed-') != -1) { //Found start with signed file
+
+		let signedfile = process.argv[2] //Use this file with transactions to do payments
+		jsondata = JSON.parse(fs.readFileSync(signedfile))
+		let ask = "\nAre you sure you want to execute a transaction for file : '" + signedfile + "' ? y/n "
+		let answer = userinput( ask ) //get answer
+
+		if (answer === 'y') { //Confirm to resend masstransaction
+
+			let respons = post_api_syncrequest ( config.node, toolconfigdata.txsbroadcast, jsondata ) //synchronous post request with masstx json file
+
+			if (respons.error) {
+				console.log()
+				console.log(' Error : ' + respons.error)
+				if (respons.message) { console.log(' Message received : ' + respons.message) }
+				if (respons.details) { console.log(' Message details :'); console.log(respons.details) }
+				console.log()
+			} else {
+				console.log('\n Transaction SUCCEEDED')
+				console.log(' - Payment : ' + respons.totalAmount/Math.pow(10,8) + ' Waves')
+				console.log(' - Counts  : ' + respons.transferCount + '\n')
+			}
+		}
+		console.log('\n Goodbye.\n')
+		process.exit()
+	}
+
 	if ( !fs.existsSync(paymentqueuefile) ) {
 		console.log("Missing file " + paymentqueuefile + "! Run collector session first. Goodbye")
 		process.exit() //Terminate
@@ -313,6 +377,25 @@ function testcases () {
 		getpayqueue(start);
 	}
 }
+
+
+/* Method to get userinput
+ * arguments;
+ * - sentense: the text phrase to be used
+ */
+function userinput (sentense ) {
+
+	let answer = 'n'
+	answer = readlinesync.question(sentense);
+	
+	if (answer == 'y') {
+		return answer
+	} else {
+		console.log('\nGoodbye.\n')
+		process.exit()
+	}
+}
+
 
 /*
 ** Method to get only the batches from the paymentqueue file that are non-empty (with payouts)
@@ -420,18 +503,19 @@ function getpayqueue (myfunction) {
 
 } //End function getpayqueue
 
+
 function dumpjsontofile (filename, jsonarray) {
 
 	const data = JSON.stringify(jsonarray, null, 4);
-
 	fs.writeFile(filename, data, {}, function(err) {
                 if (!err) { } else { console.log("Warning, errors writing " + filename + "!\n",err); }
         });
 }
 
+
 //Promise function to retrieve the signed masstransfer
 //return the json body
-function promise_sign_masstransaction(dumpfile, jsondata) {
+function promise_sign_masstransaction(file, jsondata) {
 
 	let request_options = {
 		url: config.node + toolconfigdata.masstxsignapisuffix,
@@ -439,19 +523,22 @@ function promise_sign_masstransaction(dumpfile, jsondata) {
                 headers: { "Accept": "application/json", "Content-Type": "application/json", "api_key" : config.apiKey }
 	}
 
+	console.log('\n  Signing transaction...')
+
 	return new Promise(function(resolve, reject) {
 		request.post(request_options, function(err, res, body) {
                         if (err) {
 				reject(err)
                         } else {
-				dumpjsontofile( dumpfile, body); //Write signed JSON data to file as reference if pay failures occur
                                 resolve(body)
                         }
                 })
         }) //END promise
 }
 
-function updatepayqueuefile (array, batchid) {
+
+
+function updatepayqueuefile (array, batchid, txscheckarray) {
 
 	jobs-- //Count down everytime a job is done
 	
@@ -492,15 +579,20 @@ function updatepayqueuefile (array, batchid) {
 
 			}
 			})
-			console.log(" Finished payments for all jobs in the payqueue. All done :-)")
+			console.log(" Finished payments for all jobs in the payqueue.")
 			console.log(" Saved message file to be picked up by your social media updater! (" +
-                     		      mydate + "-" + socialmediafile + ")\n" )
-                        console.log(" If you enjoy this script, Waves or tokens on Waves are welcome as a gift;\n\n" +
-                               	    "   - wallet alias: 'donatewaves@plukkie'\n" +
-                               	    "   - wallet address: '3PKQKCw6DdqCvuVgKtZMhNtwzf2aTZygPu6'\n\n" +
-                               	    " Happy forging!\n")
+                     		      mydate + "-" + socialmediafile + ")\n\n" )
+			
+			console.log('-----------------------------------------------------')
+			console.log(" Validating if transactions were succesfull...")
+			
+			txscheckarray.forEach ( function ( obj, index) { //For every masstransaction done
 
-			if (fs.existsSync(masstxrunfile)) {
+                        	validate_pay_transactions(obj, index) //Check if the transaction was succesfull
+
+			})
+	
+			if (fs.existsSync(masstxrunfile)) { //If the runfile exists
 				fs.unlink(masstxrunfile, (err) => { //All done, remove run file which is checked during startup
   					if (err) {
     						console.error(err)
@@ -511,6 +603,8 @@ function updatepayqueuefile (array, batchid) {
                 }
 	});
 }
+
+
 
 /**
  * The method that starts the payment process.
@@ -528,6 +622,7 @@ var start = function(jsonarray, queueid, nrofmasstransfers) {
 	doPayment(payments, 0, queueid, nrofmasstransfers)
     }
 };
+
 
 /**
  * This method executes the actual masspayment transactions.
@@ -549,6 +644,7 @@ var doPayment = function(payments, counter, batchid, nrofmasstransfers) {
 	var delayarray = [] //array to set timeout time related to all transactions to be done
 	var logobject = "" //object to add to batchlogfile
 	var transfercostbatch = 0 //transfercost for all masstransfers in a batch
+	var txdata = {} //Transaction id to validate correct payments afterwards
         delayarray[0] = 0 //timeout for first asset will be zero
 
 	masstransferobject(payments, function(cb) { payment = cb })      //VAR to construct masstransfer array, callback array with all transactions
@@ -632,71 +728,46 @@ var doPayment = function(payments, counter, batchid, nrofmasstransfers) {
 						}
 						if ( masstransfers == 1 ) { timeout = 0 } else { timeout = transactiontimeout }
 						
-						//Dump JSON sign object to file for troubleshooting if app crashed
 						signfile = paymentsdonedir + "masstx-sign-" + batchid + "-" + masstransfercounterup + ".json"
 						signedfile = paymentsdonedir + "masstx-signed-" + batchid + "-" + masstransfercounterup + ".json"
+						
+						//Dump JSON sign object to file for troubleshooting if app crashed or part of mass payments fail
 						dumpjsontofile( signfile, masstransactionsign);
 
-						var promise_signed_masstxs = promise_sign_masstransaction(signedfile, masstransactionsign)
+						var promise_signed_masstxs = promise_sign_masstransaction(signedfile, masstransactionsign) //This signs the masstxs (need api key)
 
-						//POST request for a masstransfer
-						promise_signed_masstxs.then (function (signed_data) {
+						//POST broadcast request for a masstransfer
+						promise_signed_masstxs.then (function (signed_data) { //Signed txs is received, now broadcast and validate
 
-						  masstransactionpayment = signed_data
+							console.log('  Received signed transaction, id "' + signed_data.id + '"')
+						  	masstransactionpayment = signed_data
 
-        	                                  request.post({ url: config.node + toolconfigdata.txsbroadcast, json: masstransactionpayment,
-                        	                        	headers: { "Accept": "application/json", "Content-Type": "application/json", "api_key": config.apiKey }
-                                        		     }, function(err, res, body) {
-								if (err) {
-                                                        		console.log(err);
-                                                		} else {
-									logmessage = "         " + batchid + "] - masstransfer " + masstransfercounterup +
-                                                                                     " for " + asset + " done! Send " + onemasstransferamount/Math.pow(10,decimalpts) +
-										     " " + asset + " with " + masstxarray.length + " transactions in it." +
-										     " Cost " + masstransactionpayment.fee/Math.pow(10,8)
+							dumpjsontofile ( signedfile, masstransactionpayment )
 
-									console.log(logmessage)
+						  	//Add transaction id with batch details for validation and push in array for later validation checks
+						  	txdata[masstransactionpayment.id] = { "batchid" : batchid, "sub" : masstransfercounterup, "signedfile" : signedfile }
+						  	txscheckarray.push(txdata)
+							
+							//Broadcast signed transaction, POST request, no need for API key
+							var post_txs_broadcast = promise_broadcast_masstransaction (
 
-									//Remove sign and signed files after succesfull masstransaction
-									//if (fs.existsSync(signfile)) {
-                                					//	fs.unlink(signfile, (err) => {
-                                        				//		if (err) {
-                                                			//			console.error(err)
-                                                			//			return
-                                        				//		}
-                                					//	})
-                        						//}
-									//if (fs.existsSync(signedfile)) {
-                                					//	fs.unlink(signedfile, (err) => {
-                                        				//		if (err) {
-                                                			//			console.error(err)
-                                                			//			return
-                                        				//		}
-                                					//	})
-                        						//}
-									
-									logobject += logmessage + "\n"
-									masstxarray = []
-									onemasstransferamount = 0
-									masstxsdone++
-									transfercostbatch += masstransactionpayment.fee/Math.pow(10,8)
+									batchid,
+									masstransfercounterup,
+									asset,
+									onemasstransferamount,
+									masstxarray,
+									decimalpts,
+									logobject,
+									masstxsdone,
+									transfercostbatch,
+									nrofmasstransfers,
+									txscheckarray )
 
-									if ( masstxsdone == nrofmasstransfers ) { //Finished All masstransfers for one batch!
+							post_txs_broadcast.then (function () { //If promise received body of transaction
 
-										console.log("\nTotal masstransfercosts: " + transfercostbatch + " Waves.")
+								//Put here stuff if needs to do extra stuff after the Broadcast POST
+							});
 
-										fs.appendFileSync(config.payoutfileprefix + batchid + ".log",
-												  "\n======= masstx payment log [" +(new Date())+ "] =======\n" + logobject +
-												  "\nTotal masstransfercosts: " + transfercostbatch + " Waves.\n" +
-												  "All payments done for batch " + batchid + ".\n" +
-												  "\nIf you enjoy this script, gifts are welcome at alias " +
-											    	  "'donatewaves@plukkie'\n\n")
-
-										
-										updatepayqueuefile(newpayqueue,batchid)
-									}
-                                                		}
-                                        	  }); //End request.post
 						}); //End Promise
 					}, timeout) //End function masstransfers
 				} //End for all masstransfers loop
@@ -704,6 +775,143 @@ var doPayment = function(payments, counter, batchid, nrofmasstransfers) {
 		} //End if ( asset in payment )
 	}) //End loop coins.forEach
 } //End var doPayment
+
+
+/* Method that requests api call and gets JSON body returned
+ * args:
+ * - node : http://ip:port of host
+ * - uri : additional uri to query
+ * return JSON body
+ */
+function get_api_syncrequest (node, uri) {
+
+	let url = node+uri
+	let respons = syncrequest ( 'GET', url, { json: true } )
+
+	return JSON.parse(respons.body)
+}
+
+
+/* Method that requests api call and POST JSONd
+ * args:
+ * - node : http://ip:port of host
+ * - uri : additional uri to query
+ * - jsonbody: JSON data to POST
+ * return JSON body
+ */
+function post_api_syncrequest (node, uri, jsonbody) {
+
+        let url = node+uri
+        let respons = syncrequest ( 'POST', url, { json: jsonbody } )
+
+        return JSON.parse(respons.body)
+}
+
+
+/* Method that validates if the masspayments are succesfully fullfilled
+ * arguments:
+ * - obj: array with all transaction id's that needs to be validated
+ *
+ * if a transactions failed, send telegram message
+ * The index counter of forEach loop is used to detect end
+ * The timeout of 4 secs is needed to let the fresh transaction
+ * be secured in the blockchain, else it respons with "transaction not found"
+ */
+function validate_pay_transactions (obj, index) {
+
+		let txid = Object.keys(obj)[0] //transaction id
+		let batchid = obj[txid]['batchid']
+		let subbatch = obj[txid]['sub']
+		let signedfile = obj[txid]['signedfile']
+
+		console.log(" Validating transaction '" + txid + ", batchid " + batchid + "-" + subbatch + '...')
+
+		if (index+1 === txscheckarray.length) { console.log() } //Add whiteline if end of array
+
+		setTimeout ( function () {
+			let txsrespons = get_api_syncrequest ( readnode, txinfoprefix + txid)
+
+			if (txsrespons.error) { //Transaction FAILED
+
+				let msg1 = nodename + ' Alert!\n--------------------\nA masstransfer failed.\n'
+				let msg2 = '\n ALERT !:\n Transaction "' + txid + '" FAILED, batch ' + batchid + '-' + subbatch + '.\n The signed JSON data is reserved in file : "' + signedfile + '"' +
+					   '\n To retransmit the failed transaction, start masstx as follows: "node masstx ' + signedfile + '"' +
+					   '\n Resend it witin 12 mins else it is stale!'
+				
+				console.log(msg2)
+
+				if (telegramconfig.tg === 'yes') {
+
+					tg(msg1+msg2) //send message request to telegram
+				}
+
+			} else { //Transaction SUCCESS
+				console.log(' Transaction ' + txid + ' was SUCCESFULL.')
+			}
+
+			if (index+1 === txscheckarray.length) { console.log(endmessage) } //Show app end message when reached end of txs id array
+
+		}, 4000 + index*10); //Wait 4 seconds + slight increasement for every index
+}
+
+
+
+/* Promise function to broadcast the signed transaction
+ * return the json body
+ * all arguments are needed to avoid undefined errors
+ * If want to avoid this big list, define the function nested
+ * in top function or define the vars global
+ */
+function promise_broadcast_masstransaction ( batchid, masstransfercounterup, asset,
+					     onemasstransferamount, masstxarray, decimalpts,
+					     logobject, masstxsdone, transfercostbatch,
+					     nrofmasstransfers, txscheckarray ) {
+
+	return new Promise(function(resolve, reject) {
+
+		console.log('  Broadcast transaction "' + masstransactionpayment.id + '" to node...')
+
+                request.post ({ url: config.node + toolconfigdata.txsbroadcast, json: masstransactionpayment,
+                               	headers: { "Accept": "application/json", "Content-Type": "application/json" } },
+			function(err, res, body) {
+				if (err) {
+					console.log(err);
+					reject(err)
+                                } else {
+					console.log('  Done!\n')
+					logmessage = "         " + batchid + "] - masstransfer " + masstransfercounterup +
+                                                     " for " + asset + " done! Send " + onemasstransferamount/Math.pow(10,decimalpts) +
+						     " " + asset + " with " + masstxarray.length + " transactions in it." +
+						     " Cost " + masstransactionpayment.fee/Math.pow(10,8)
+
+					console.log(logmessage)
+
+					logobject += logmessage + "\n"
+					masstxarray = []
+					onemasstransferamount = 0
+					masstxsdone++
+					transfercostbatch += masstransactionpayment.fee/Math.pow(10,8)
+
+					if ( masstxsdone == nrofmasstransfers ) { //Finished All masstransfers for one batch!
+
+						console.log("\nTotal masstransfercosts: " + transfercostbatch + " Waves.")
+
+						fs.appendFileSync(config.payoutfileprefix + batchid + ".log",
+							  "\n======= masstx payment log [" +(new Date())+ "] =======\n" + logobject +
+							  "\nTotal masstransfercosts: " + transfercostbatch + " Waves.\n" +
+							  "All payments done for batch " + batchid + ".\n" +
+							  "\nIf you enjoy this script, gifts are welcome at alias " +
+						    	  "'donatewaves@plukkie'\n\n" )
+
+						updatepayqueuefile(newpayqueue,batchid, txscheckarray)
+					}
+					resolve(body)
+				}
+		}); //End request.post
+        }) //END promise
+}
+
+
 
 /* This var will create the masstransferarray for Waves and Mrt
  * @param paymentarray: the array with all lease recipients with amounts

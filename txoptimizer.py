@@ -259,7 +259,7 @@ def preparehtml():
             get_blocktimestamp(stopblock, querynode, blockheaders_suffix) + " (block " + str(startblock) + " - " + str(stopblock) + ")</h4>" +\
             "  <h4>LPOS address: " + str(nodewallet) + "</h4>" +\
             "  <h5>[ " + str(date) + " ]</h5>" +\
-            "  <h5>Dear leasers, here's the periodic report of the fee distribution earned by wavesnode 'Plukkieforger'. Greetings!</h5> " +\
+            "  <h5>Dear leasers, here's the periodic report of the fee distribution earned by waves service '" + servicename + "'. Greetings!</h5> " +\
             "  <h5>You can always contact me by <a href=\"mailto:" + str(mail) + "\">E-mail</a></h5>" +\
             "  <h5>Blocks forged: " + str(blocks) + " Leasers: " + leasers + "</h5>" +\
             "  <table class=\"table table-striped table-hover\">" +\
@@ -549,6 +549,7 @@ with open(configfile, "r") as json_file:     # read and set variables from confi
     nodewallet = jsonconfigdata["paymentconfig"]["leasewallet"]
     blockheaders_suffix = jsonconfigdata["forktoolsconfig"]["blockheaders"]
     balanceuri = (jsonconfigdata['api_uris']['balances']).replace('{address}', nodewallet) # API uri's from configfile
+    servicename = jsonconfigdata["paymentconfig"]["servicename"]
 
 errorchecks()
 
