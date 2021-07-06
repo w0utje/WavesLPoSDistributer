@@ -1,4 +1,4 @@
-# WavesLPoSDistributer          v3.2.1.3
+# WavesLPoSDistributer          v4.0
 A revenue distribution tool for Waves nodes and the leasers
 
 Welcome to Plukkies version of the LPoSdistribution script, 'the lazy' version.
