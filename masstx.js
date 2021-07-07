@@ -823,6 +823,7 @@ function validate_pay_transactions (obj, index) {
 		let batchid = obj[txid]['batchid']
 		let subbatch = obj[txid]['sub']
 		let signedfile = obj[txid]['signedfile']
+		const delay = parseInt(toolconfigdata['validationdelay']) //how long to wait before validation checks are executed
 
 		console.log(" Validating transaction '" + txid + ", batchid " + batchid + "-" + subbatch + '...')
 
@@ -851,7 +852,7 @@ function validate_pay_transactions (obj, index) {
 
 			if (index+1 === txscheckarray.length) { console.log(endmessage) } //Show app end message when reached end of txs id array
 
-		}, 4000 + index*10); //Wait 4 seconds + slight increasement for every index
+		}, delay + index*10); //Wait 4 seconds + slight increasement for every index
 }
 
 

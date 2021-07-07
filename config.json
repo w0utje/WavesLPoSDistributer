@@ -46,7 +46,8 @@
 		"masstxapisuffix" : "/assets/masstransfer",
 		"masstransferversion" : "1",
 		"relevantassets" : [ "Waves", "Mrt" ],
-		"optimizerdir": "txoptimizer"
+		"optimizerdir": "txoptimizer",
+		"validationdelay" : "5000"
 	},
 	"forktoolsconfig" : {
 		"controlnodes" : { },
