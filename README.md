@@ -1,4 +1,4 @@
-# WavesLPoSDistributer          v4.0
+# WavesLPoSDistributer          v4.1
 A revenue distribution tool for Waves nodes and the leasers
 
 Welcome to Plukkies version of the LPoSdistribution script, 'the lazy' version.
@@ -125,7 +125,8 @@ npm install
     "masstxapisuffix" : "/assets/masstransfer",
     "masstransferversion" : "1",
     "relevantassets" : [ "Waves", "Mrt" ],
-    "optimizerdir" : "txoptimizer"
+    "optimizerdir" : "txoptimizer",
+    "validationdelay" : "5000"
   },
   "forktoolsconfig" : {
     "controlnodes" : { },                               <-- optional
@@ -347,6 +348,11 @@ Here's a clarification of all key/value pairs;
  
  - "optimizerdir"
    The folder where 'txoptimizer' runs are archived for backup and reference purpose.
+
+ - "validationdelay"
+   How many msecs to wait before the validation is executed after pay transactions.
+   If this is set to low, the transactions are concluded as failed.
+
 ```
 **forktoolsconfig**  (This part is for the forktesting tool)
 ```

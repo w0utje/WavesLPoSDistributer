@@ -20,9 +20,9 @@
  *
 /* =====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES===WAVES====WAVES====
 
-Version 4.0
+Version 4.1
 ---------------
-- date 06 Jul 2021
+- date 07 Jul 2021
 
 - OPTIMIZED MEMORY USAGE, HUGE IMPROVEMENT !
   ------------------------------------------
@@ -72,6 +72,7 @@ Version 4.0
 
   4. config key "nodename" : "value" is used in alerts
      If you have multiple waves nodes, it becomes clear which node send the alert
+
 
 - ROADMAP
   - Migrate deferred library 'request' to a new library
