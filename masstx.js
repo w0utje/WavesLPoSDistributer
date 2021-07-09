@@ -846,7 +846,7 @@ function validate_pay_transactions (txid, count) {
 
 		console.log(" Validating transaction '" + txid + ", batchid " + batchid + "-" + subbatch + '...')
 
-		if (count === txdata.length) { console.log() } //Add whiteline if end of array
+		if (count === Object.keys(txdata).length) { console.log() } //Add whiteline if end of array
 
 		setTimeout ( function (batchid) {
 			let txsrespons = get_api_syncrequest ( readnode, txinfoprefix + txid)
@@ -869,7 +869,7 @@ function validate_pay_transactions (txid, count) {
 				console.log(' Transaction ' + txid + ' was SUCCESFULL.')
 			}
 
-			if (count+1 === txdata.length) { console.log(endmessage) } //Show app end message when reached end of txs id array
+			if (count === Object.keys(txdata).length) { console.log(endmessage) } //Show app end message when reached end of txs id array
 
 		}, delay + count*10); //Wait 4 seconds + slight increasement for every index
 }
