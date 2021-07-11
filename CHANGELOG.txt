@@ -20,6 +20,38 @@
  *
 /* =====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES====WAVES===WAVES====WAVES====
 
+Version 4.1.2
+---------------
+- date 11 Jul 2021
+
+- Added FAQ chapter in README
+  This answers most asked questions and problems that could occur
+
+- FIXES 
+  - masstx only send the first payment succesfully of a masstransaction that had more
+    the 100 recipients. The subsequent signing requests were rejected. This was because 
+    the maximum of 100 was not subtracted from the subsequent transfers.
+     This applied to v3.2.1.1 - v4.1
+
+  - Added node package 'readline-sync' in package.json
+    This is used in masstx and was not installed with npm install.
+    Needed manual install with 'npm install readline-sync'
+
+- ROADMAP
+  - Migrate deferred library 'request' to a new library
+  - incorporate airdrop tool
+  - Release docker container version of WavesLPOSdistributer
+  - Developing WLDaaS
+  - Add manual option 'signing' of failed mass transaction which is not send within the 
+    expiry interval (currently 12 mins)
+
+- File changes (+ added, - removed, * updated)
+  * masstx.js
+  * package.json
+  * CHANGELOG.txt
+  * README.md
+
+
 Version 4.1
 ---------------
 - date 07 Jul 2021

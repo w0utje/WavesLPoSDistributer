@@ -1,4 +1,4 @@
-# WavesLPoSDistributer          v4.1
+# WavesLPoSDistributer          v4.1.2
 A revenue distribution tool for Waves nodes and the leasers
 
 Welcome to Plukkies version of the LPoSdistribution script, 'the lazy' version.
@@ -707,6 +707,9 @@ Afterwards, the script could be started with:
 ```sh
 node airdrop_leasers.js
 ```
+
+## FAQ
+- This list will be filled with Questions and answers soon
 
 ## Disclaimer
 Please always test your resulting payment scripts, e.g., with the _checkPaymentsFile.js_ script!
